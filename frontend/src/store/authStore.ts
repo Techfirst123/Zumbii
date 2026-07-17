@@ -7,6 +7,7 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   setAuth: (data: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
 }
 
@@ -18,6 +19,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       setAuth: ({ user, accessToken, refreshToken }) =>
         set({ user, accessToken, refreshToken }),
+      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
     { name: 'zumbii-auth' }

@@ -23,19 +23,53 @@ interface RequestOptions extends RequestInit {
   auth?: boolean;
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  const { refreshToken } = useAuthStore.getState();
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { auth = true, headers, ...rest } = options;
-  const token = auth ? useAuthStore.getState().accessToken : null;
   const isFormData = rest.body instanceof FormData;
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-  });
+  const doFetch = (bearer: string | null) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      ...rest,
+      headers: {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+        ...headers,
+      },
+    });
+
+  let token = auth ? useAuthStore.getState().accessToken : null;
+  let res = await doFetch(token);
+
+  if (res.status === 401 && auth && token && path !== '/auth/refresh') {
+    refreshPromise ??= refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+    const refreshed = await refreshPromise;
+    if (refreshed) {
+      token = useAuthStore.getState().accessToken;
+      res = await doFetch(token);
+    }
+  }
 
   const contentType = res.headers.get('content-type') || '';
   const data = contentType.includes('application/json')
@@ -43,6 +77,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     : null;
 
   if (!res.ok) {
+    if (res.status === 401 && auth) {
+      useAuthStore.getState().logout();
+    }
     const message = data?.message || res.statusText || 'Request failed';
     throw new ApiError(Array.isArray(message) ? message.join(', ') : message, res.status);
   }
