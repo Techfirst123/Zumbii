@@ -8,7 +8,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
-    "vercel-build": "prisma generate && nest build",
+    "vercel-build": "prisma generate && prisma db push --accept-data-loss && nest build",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
