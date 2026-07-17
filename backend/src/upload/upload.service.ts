@@ -7,8 +7,15 @@ export class UploadService {
   private uploadDir = process.env.UPLOAD_DIR || './uploads';
 
   constructor() {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+    try {
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
+    } catch {
+      this.uploadDir = '/tmp/uploads';
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
     }
   }
 

@@ -24,60 +24,9 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import Button from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
-
-interface CartItem {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  quantity: number;
-  maxQuantity: number;
-  seller: string;
-  inStock: boolean;
-  slug: string;
-}
-
-const initialCartItems: CartItem[] = [
-  {
-    id: '1',
-    name: 'Premium Wireless Headphones Pro',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
-    price: 2499,
-    originalPrice: 3999,
-    quantity: 1,
-    maxQuantity: 10,
-    seller: 'TechGadgets India',
-    inStock: true,
-    slug: 'premium-wireless-headphones',
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Ultra X2',
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
-    price: 5999,
-    originalPrice: 8999,
-    quantity: 2,
-    maxQuantity: 5,
-    seller: 'WearableTech',
-    inStock: true,
-    slug: 'smart-watch-ultra',
-  },
-  {
-    id: '3',
-    name: 'Organic Cotton T-Shirt Pack',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80',
-    price: 1299,
-    originalPrice: 1999,
-    quantity: 1,
-    maxQuantity: 20,
-    seller: 'EcoFashion Hub',
-    inStock: true,
-    slug: 'organic-cotton-tshirt',
-  },
-];
+import { PincodeChecker } from '@/components/ui/PincodeChecker';
+import { useCartStore } from '@/store/cartStore';
 
 const suggestedProducts = [
   {
@@ -111,7 +60,9 @@ const suggestedProducts = [
 ];
 
 function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
+  const cartItems = useCartStore((s) => s.items);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const removeItem = useCartStore((s) => s.removeItem);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -123,19 +74,14 @@ function CartPage() {
   const discount = Math.round(subtotal * (couponDiscount / 100));
   const total = subtotal + shipping + tax - discount;
 
-  const handleQuantityChange = (id: string, delta: number) => {
-    setCartItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const newQty = item.quantity + delta;
-        if (newQty < 1 || newQty > item.maxQuantity) return item;
-        return { ...item, quantity: newQty };
-      })
-    );
+  const handleQuantityChange = (productId: string, delta: number) => {
+    const item = cartItems.find((i) => i.productId === productId);
+    if (!item) return;
+    updateQuantity(productId, item.quantity + delta);
   };
 
-  const handleRemoveItem = (id: string, name: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const handleRemoveItem = (productId: string, name: string) => {
+    removeItem(productId);
     toast.success(`${name} removed from cart`);
   };
 
@@ -168,8 +114,8 @@ function CartPage() {
     toast.success('Coupon removed');
   };
 
-  const handleMoveToWishlist = (item: CartItem) => {
-    handleRemoveItem(item.id, item.name);
+  const handleMoveToWishlist = (item: { productId: string; name: string }) => {
+    handleRemoveItem(item.productId, item.name);
     toast.success(`${item.name} moved to wishlist`);
   };
 
@@ -227,7 +173,7 @@ function CartPage() {
               <AnimatePresence mode="popLayout">
                 {cartItems.map((item) => (
                   <motion.div
-                    key={item.id}
+                    key={item.productId}
                     layout
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -257,26 +203,18 @@ function CartPage() {
                                 {item.name}
                               </Link>
                               <p className="text-xs text-text-tertiary mt-0.5">{item.seller}</p>
-                              {!item.inStock && (
-                                <Badge variant="danger" size="sm" className="mt-1">Out of Stock</Badge>
-                              )}
                             </div>
                             <div className="text-right shrink-0">
                               <p className="text-base sm:text-lg font-bold text-text-primary">
                                 ₹{(item.price * item.quantity).toLocaleString('en-IN')}
                               </p>
-                              {item.originalPrice && (
-                                <p className="text-xs text-text-tertiary line-through">
-                                  ₹{(item.originalPrice * item.quantity).toLocaleString('en-IN')}
-                                </p>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center justify-between mt-3 sm:mt-4">
                             <div className="flex items-center gap-2">
                               <div className="flex items-center border border-border rounded-xl overflow-hidden">
                                 <button
-                                  onClick={() => handleQuantityChange(item.id, -1)}
+                                  onClick={() => handleQuantityChange(item.productId, -1)}
                                   disabled={item.quantity <= 1}
                                   className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Decrease quantity"
@@ -287,7 +225,7 @@ function CartPage() {
                                   {item.quantity}
                                 </span>
                                 <button
-                                  onClick={() => handleQuantityChange(item.id, 1)}
+                                  onClick={() => handleQuantityChange(item.productId, 1)}
                                   disabled={item.quantity >= item.maxQuantity}
                                   className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Increase quantity"
@@ -308,7 +246,7 @@ function CartPage() {
                                 <Heart className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleRemoveItem(item.id, item.name)}
+                                onClick={() => handleRemoveItem(item.productId, item.name)}
                                 className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
                                 aria-label="Remove item"
                               >
@@ -416,6 +354,10 @@ function CartPage() {
                     <Shield className="w-3.5 h-3.5" />
                     Secure checkout with SSL encryption
                   </div>
+                </Card>
+
+                <Card className="p-5 sm:p-6 mt-4" hover={false}>
+                  <PincodeChecker />
                 </Card>
 
                 <div className="mt-4 p-4 rounded-2xl bg-zumbii-50 border border-zumbii-100">

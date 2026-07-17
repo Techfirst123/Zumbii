@@ -239,7 +239,7 @@ export default function CategoriesPage() {
               {filtered.map((cat) => (
                 <motion.div key={cat.slug} variants={cardVariants}>
                   <Link
-                    href={`/categories/${cat.slug}`}
+                    href={`/category/${cat.slug}`}
                     className="group block h-full"
                   >
                     <div className="relative h-full rounded-2xl border border-border bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:shadow-zumbii-100/50 hover:-translate-y-1 hover:border-zumbii-200">

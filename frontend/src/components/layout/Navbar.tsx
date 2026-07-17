@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Mic,
-  Image,
+  Image as ImageIcon,
   Heart,
   ShoppingCart,
   ChevronDown,
@@ -23,8 +25,10 @@ import {
 import clsx from 'clsx';
 import MegaMenu from './MegaMenu';
 import { siteConfig, navLinks } from '@/lib/constants';
+import { useCartStore } from '@/store/cartStore';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -58,7 +62,13 @@ export default function Navbar() {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
-  const cartCount = 3;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const cartCount = useCartStore((s) => s.totalItems());
+  const displayedCartCount = mounted ? cartCount : 0;
+
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <header
@@ -74,20 +84,36 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary lg:hidden"
+            className={clsx(
+              'flex items-center justify-center rounded-xl p-2 transition-colors lg:hidden',
+              scrolled
+                ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                : 'text-white/75 hover:bg-white/10 hover:text-white'
+            )}
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
 
           {/* Logo */}
-          <Link href="/" className="flex shrink-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zumbii-600 text-sm font-bold text-white lg:h-9 lg:w-9 lg:text-base">
-              Z
-            </div>
-            <span className="text-lg font-bold tracking-tight text-text-primary lg:text-xl">
-              {siteConfig.name}
-            </span>
+          <Link
+            href="/"
+            className={clsx(
+              'flex h-10 shrink-0 items-center rounded-xl px-2 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md lg:h-12',
+              scrolled
+                ? 'bg-white/85 shadow-black/5'
+                : 'bg-black/30 shadow-black/10'
+            )}
+            aria-label={`${siteConfig.name} home`}
+          >
+            <NextImage
+              src="/images/zumbii-logo-header-wide.png"
+              alt={`${siteConfig.name} logo`}
+              width={256}
+              height={66}
+              priority
+              className="h-8 w-[136px] object-contain lg:h-9 lg:w-[154px]"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -98,7 +124,12 @@ export default function Navbar() {
                   <div className="group">
                     <Link
                       href={link.href}
-                      className="flex items-center gap-1 rounded-xl px-3.5 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+                      className={clsx(
+                        'flex items-center gap-1 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                        scrolled
+                          ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                          : 'text-white/75 hover:bg-white/10 hover:text-white'
+                      )}
                     >
                       {link.label}
                       <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
@@ -110,7 +141,12 @@ export default function Navbar() {
                 ) : (
                   <Link
                     href={link.href}
-                    className="rounded-xl px-3.5 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+                    className={clsx(
+                      'rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                      scrolled
+                        ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                        : 'text-white/75 hover:bg-white/10 hover:text-white'
+                    )}
                   >
                     {link.label}
                   </Link>
@@ -124,11 +160,21 @@ export default function Navbar() {
             {/* Desktop search toggle */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="hidden items-center gap-2 rounded-xl border border-border bg-surface-secondary px-4 py-2 text-sm text-text-tertiary transition-all hover:border-zumbii-200 hover:text-text-secondary lg:flex lg:w-56 xl:w-72"
+              className={clsx(
+                'hidden items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-all lg:flex lg:w-56 xl:w-72',
+                scrolled
+                  ? 'border-border bg-surface-secondary text-text-tertiary hover:border-zumbii-200 hover:text-text-secondary'
+                  : 'border-white/20 bg-white/10 text-white/60 hover:border-white/40 hover:text-white'
+              )}
             >
               <Search className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-left">Search products...</span>
-              <kbd className="hidden rounded-md border border-border bg-white px-1.5 py-0.5 text-[10px] font-medium text-text-tertiary xl:inline">
+              <kbd className={clsx(
+                'hidden rounded-md border px-1.5 py-0.5 text-[10px] font-medium xl:inline',
+                scrolled
+                  ? 'border-border bg-white text-text-tertiary'
+                  : 'border-white/20 bg-white/10 text-white/50'
+              )}>
                 Ctrl+K
               </kbd>
             </button>
@@ -136,7 +182,12 @@ export default function Navbar() {
             {/* Quick action icons */}
             <Link
               href="/sell"
-              className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-zumbii-600 transition-colors hover:bg-zumbii-50 lg:flex"
+              className={clsx(
+                'hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:flex',
+                scrolled
+                  ? 'text-zumbii-600 hover:bg-zumbii-50'
+                  : 'text-zumbii-300 hover:bg-white/10 hover:text-zumbii-200'
+              )}
             >
               <Store className="h-4 w-4" />
               <span>Sell</span>
@@ -144,7 +195,12 @@ export default function Navbar() {
 
             <Link
               href="/franchise"
-              className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-zumbii-600 transition-colors hover:bg-zumbii-50 lg:flex"
+              className={clsx(
+                'hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:flex',
+                scrolled
+                  ? 'text-zumbii-600 hover:bg-zumbii-50'
+                  : 'text-zumbii-300 hover:bg-white/10 hover:text-zumbii-200'
+              )}
             >
               <Briefcase className="h-4 w-4" />
               <span>Franchise</span>
@@ -152,7 +208,12 @@ export default function Navbar() {
 
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className="flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary lg:hidden"
+              className={clsx(
+                'flex items-center justify-center rounded-xl p-2 transition-colors lg:hidden',
+                scrolled
+                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
+              )}
               aria-label="Search"
             >
               <Search className="h-5 w-5" />
@@ -160,7 +221,12 @@ export default function Navbar() {
 
             <Link
               href="/wishlist"
-              className="relative flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+              className={clsx(
+                'relative hidden items-center justify-center rounded-xl p-2 transition-colors lg:flex',
+                scrolled
+                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
+              )}
               aria-label="Wishlist"
             >
               <Heart className="h-5 w-5" />
@@ -168,25 +234,38 @@ export default function Navbar() {
 
             <Link
               href="/cart"
-              className="relative flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+              className={clsx(
+                'relative flex items-center justify-center rounded-xl p-2 transition-colors',
+                scrolled
+                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
+              )}
               aria-label="Cart"
             >
               <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
+              {displayedCartCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-zumbii-600 px-1 text-[10px] font-bold leading-none text-white">
-                  {cartCount}
+                  {displayedCartCount}
                 </span>
               )}
             </Link>
 
             {/* User dropdown */}
-            <div ref={userMenuRef} className="relative">
+            <div ref={userMenuRef} className="relative hidden lg:block">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 rounded-xl p-1.5 pr-3 text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-text-primary"
+                className={clsx(
+                  'flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors',
+                  scrolled
+                    ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                    : 'text-white/75 hover:bg-white/10 hover:text-white'
+                )}
                 aria-label="User menu"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zumbii-100 text-sm font-semibold text-zumbii-700">
+                <div className={clsx(
+                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold',
+                  scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
+                )}>
                   <User className="h-4 w-4" />
                 </div>
                 <ChevronDown
@@ -291,7 +370,7 @@ export default function Navbar() {
                     className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-zumbii-600"
                     aria-label="Image search"
                   >
-                    <Image className="h-4 w-4" />
+                    <ImageIcon className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -321,14 +400,20 @@ export default function Navbar() {
               className="flex h-full w-80 max-w-[85vw] flex-col bg-white shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-border px-4 py-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zumbii-600 text-sm font-bold text-white">
-                    Z
-                  </div>
-                  <span className="text-lg font-bold text-text-primary">
-                    {siteConfig.name}
-                  </span>
-                </div>
+                <Link
+                  href="/"
+                  className="flex h-10 items-center rounded-xl bg-white px-2 shadow-sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label={`${siteConfig.name} home`}
+                >
+                  <NextImage
+                    src="/images/zumbii-logo-header-wide.png"
+                    alt={`${siteConfig.name} logo`}
+                    width={256}
+                    height={66}
+                    className="h-8 w-[136px] object-contain"
+                  />
+                </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary"
@@ -400,9 +485,9 @@ export default function Navbar() {
                   >
                     <ShoppingCart className="h-4 w-4" />
                     Cart
-                    {cartCount > 0 && (
+                    {displayedCartCount > 0 && (
                       <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-zumbii-600 px-1.5 text-[10px] font-bold text-white">
-                        {cartCount}
+                        {displayedCartCount}
                       </span>
                     )}
                   </Link>

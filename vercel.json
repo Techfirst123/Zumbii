@@ -1,0 +1,21 @@
+{
+  "buildCommand": "npm run vercel-build",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "backend/api/handler.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["backend/dist/**"]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "backend/api/handler.js" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "frontend/$1" }
+  ]
+}

@@ -431,6 +431,21 @@ model RFQResponse {
   @@map("rfq_responses")
 }
 
+model Pincode {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  city          String
+  state         String
+  isServiceable Boolean  @default(true)
+  codAvailable  Boolean  @default(true)
+  deliveryDays  Int      @default(5)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([code])
+  @@map("pincodes")
+}
+
 model Coupon {
   id          String    @id @default(uuid())
   code        String    @unique

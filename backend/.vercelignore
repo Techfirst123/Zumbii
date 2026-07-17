@@ -1,0 +1,10 @@
+.env
+.env.example
+dist/
+uploads/
+node_modules/
+*.md
+api/index.ts
+api/index.js
+api/lib/
+api/dist/

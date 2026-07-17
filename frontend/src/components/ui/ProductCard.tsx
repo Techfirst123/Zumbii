@@ -10,6 +10,8 @@ import clsx from 'clsx';
 import type { Product } from '@/types';
 import { Badge } from './Badge';
 import { StarRating } from './StarRating';
+import { useCartStore } from '@/store/cartStore';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface ProductCardProps {
   product: Product;
@@ -21,6 +23,27 @@ interface ProductCardProps {
 function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const addItem = useCartStore((s) => s.addItem);
+  const requireAuth = useRequireAuth();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!requireAuth()) return;
+    if (onAddToCart) {
+      onAddToCart(product);
+      return;
+    }
+    addItem({
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: product.images[0] || '/placeholder.svg',
+      price: product.price,
+      quantity: product.moq > 1 ? product.moq : 1,
+      maxQuantity: Math.max(product.stock, 1),
+      seller: product.seller?.businessName || '',
+    });
+  };
 
   const discount =
     product.comparePrice && product.comparePrice > product.price
@@ -42,7 +65,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
         className
       )}
     >
-      <Link href={`/products/${product.slug}`} className="block">
+      <Link href={`/product/${product.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden bg-surface-tertiary">
           {!imageLoaded && (
             <div className="absolute inset-0 animate-pulse bg-surface-tertiary" />
@@ -101,13 +124,10 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
                 Quick View
               </button>
             )}
-            {onAddToCart && (
+            {product.stock > 0 && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onAddToCart(product);
-                }}
+                onClick={handleAddToCart}
                 className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-zumbii-600 text-white text-xs font-medium rounded-lg hover:bg-zumbii-700 transition-colors"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
@@ -125,7 +145,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
           </p>
         )}
 
-        <Link href={`/products/${product.slug}`}>
+        <Link href={`/product/${product.slug}`}>
           <h3 className="font-medium text-sm text-text-primary leading-snug line-clamp-2 hover:text-zumbii-600 transition-colors">
             {product.name}
           </h3>

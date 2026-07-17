@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -16,8 +17,7 @@ import {
   Package,
   Star,
   Clock,
-  Eye,
-  TrendingUp,
+  Loader2,
   Check,
   Minus,
   Plus,
@@ -32,20 +32,8 @@ import clsx from 'clsx';
 import type { Product } from '@/types';
 import { ProductCard } from '@/components/ui/ProductCard';
 import Button from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-
-const categories = [
-  { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'electronics', label: 'Electronics', icon: Package },
-  { id: 'fashion', label: 'Fashion', icon: Sparkles },
-  { id: 'home-kitchen', label: 'Home & Kitchen', icon: Package },
-  { id: 'beauty', label: 'Beauty & Health', icon: Sparkles },
-  { id: 'sports', label: 'Sports & Outdoors', icon: Package },
-  { id: 'automotive', label: 'Automotive', icon: Package },
-  { id: 'books', label: 'Books & Stationery', icon: Package },
-  { id: 'industrial', label: 'Industrial & Tools', icon: Package },
-  { id: 'food', label: 'Food & Beverages', icon: Package },
-];
+import { productsApi, categoriesApi, ApiError } from '@/lib/api';
+import { mapBackendProduct } from '@/lib/adapters';
 
 const sortOptions = [
   { value: 'popular', label: 'Popular' },
@@ -54,78 +42,7 @@ const sortOptions = [
   { value: 'price-desc', label: 'Price: High to Low' },
 ];
 
-const brands = [
-  'Apple', 'Samsung', 'Sony', 'LG', 'Nike', 'Adidas', 'Puma', 'Bose',
-  'Dell', 'HP', 'Lenovo', 'OnePlus', 'Realme', 'Xiaomi', 'Boat', 'Noise',
-];
-
 const ratings = [5, 4, 3, 2, 1];
-
-const placeholderProducts: Product[] = Array.from({ length: 24 }, (_, i) => ({
-  id: `prod-${i + 1}`,
-  name: [
-    'Premium Wireless Headphones Pro',
-    'Smart Watch Ultra X2',
-    'Organic Cotton T-Shirt Pack',
-    'Industrial LED Panel 60W',
-    'Handcrafted Ceramic Dinner Set',
-    'Portable Bluetooth Speaker',
-    'Ergonomic Office Chair',
-    '4K Action Camera HDR',
-    'Bamboo Cutting Board Set',
-    'Stainless Steel Water Bottle',
-    'Wireless Charging Pad Fast',
-    'Leather Laptop Bag Premium',
-    'Noise Cancelling Earbuds',
-    'Smart Home Security Camera',
-    'Yoga Mat Premium Non-Slip',
-    'Electric Kettle 1.5L',
-    'Minimalist Desk Lamp LED',
-    'Running Shoes Ultra Comfort',
-    'Sunglasses Polarized UV400',
-    'Backpack Laptop 40L',
-    'Mechanical Keyboard RGB',
-    'Gaming Mouse Wireless Pro',
-    'Protein Powder Whey Isolate',
-    'Vitamin C Serum 20%',
-  ][i],
-  slug: `product-${i + 1}`,
-  description: 'Premium quality product designed for modern lifestyle. Features cutting-edge technology and superior craftsmanship.',
-  shortDescription: 'Premium quality product.',
-  price: [2499, 5999, 1299, 849, 3499, 1799, 8999, 12999, 999, 799, 1499, 3999, 4999, 3499, 1599, 1299, 2199, 4999, 1999, 2999, 5499, 3499, 2499, 899][i],
-  wholesalePrice: [1899, 4599, 899, 599, 2499, 1299, 6999, 9999, 699, 549, 999, 2999, 3799, 2499, 1099, 899, 1599, 3799, 1399, 2199, 3999, 2499, 1799, 599][i],
-  comparePrice: [3999, 8999, 1999, 1299, 4999, 2999, 12999, 17999, 1499, 1299, 2499, 5999, 7999, 4999, 2499, 1999, 3499, 7999, 3499, 4999, 8999, 5499, 3999, 1499][i],
-  images: [
-    `https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80`,
-    `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80`,
-  ],
-  category: { id: 'cat-1', name: 'Electronics', slug: 'electronics', description: '', image: '', icon: '', children: [], productCount: 0 },
-  brand: { id: 'brand-1', name: brands[i % brands.length], slug: brands[i % brands.length].toLowerCase(), logo: '', description: '', productCount: 0 },
-  seller: {
-    id: 'seller-1', businessName: 'TechGadgets India', businessType: 'retailer', logo: '',
-    rating: 4.5, reviewCount: 234, verified: true, gstVerified: true, panVerified: true,
-    location: 'Mumbai, India', responseTime: '< 2 hrs', followerCount: 1200,
-  },
-  sku: `ZUM-${String(i + 1).padStart(4, '0')}`,
-  gstRate: 18,
-  moq: [1, 10, 5, 50, 1, 10, 1, 5, 10, 20, 1, 5, 10, 1, 1, 10, 5, 1, 1, 5, 1, 1, 10, 5][i],
-  stock: [45, 12, 200, 500, 30, 150, 8, 25, 180, 300, 90, 40, 60, 75, 120, 250, 85, 55, 160, 100, 70, 95, 200, 140][i],
-  availableQuantity: 1000,
-  rating: [4.8, 4.6, 4.7, 4.5, 4.9, 4.4, 4.3, 4.7, 4.2, 4.1, 4.6, 4.5, 4.8, 4.3, 4.4, 4.0, 4.5, 4.7, 4.2, 4.6, 4.8, 4.4, 4.5, 4.3][i],
-  reviewCount: [234, 189, 456, 312, 178, 567, 89, 145, 67, 234, 345, 123, 456, 78, 234, 189, 345, 678, 123, 234, 456, 345, 234, 123][i],
-  specifications: [],
-  features: [],
-  downloads: [],
-  certificates: [],
-  tags: [],
-  isFeatured: i < 6,
-  isNew: i < 4,
-  status: 'active',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-}));
-
-const recentlyViewed = placeholderProducts.slice(0, 6);
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -145,8 +62,16 @@ const listVariants = {
   visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
 };
 
-function MarketplacePage() {
-  const [searchQuery, setSearchQuery] = useState('');
+function MarketplaceContent() {
+  const searchParams = useSearchParams();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ id: string; label: string }[]>([
+    { id: 'all', label: 'All' },
+  ]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') ?? '');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -163,12 +88,46 @@ function MarketplacePage() {
   const sortRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
-  const productsPerPage = viewMode === 'list' ? 12 : 8;
-  const totalPages = Math.ceil(placeholderProducts.length / productsPerPage);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setLoadError('');
+      try {
+        const [productRes, categoryRes] = await Promise.all([
+          productsApi.list({ limit: 100 }),
+          categoriesApi.list(),
+        ]);
+        if (cancelled) return;
+        setProducts(productRes.data.map(mapBackendProduct));
+        setCategoryOptions([
+          { id: 'all', label: 'All' },
+          ...categoryRes.map((c) => ({ id: c.slug, label: c.name })),
+        ]);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof ApiError ? err.message : 'Could not load products');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const filteredProducts = placeholderProducts.filter((p) => {
+  const brands = useMemo(
+    () => Array.from(new Set(products.map((p) => p.brand.name))).filter(Boolean),
+    [products]
+  );
+
+  const productsPerPage = viewMode === 'list' ? 12 : 8;
+
+  const filteredProducts = products.filter((p) => {
     if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (selectedCategory !== 'all') return false;
+    if (selectedCategory !== 'all' && p.category.slug !== selectedCategory) return false;
     if (wholesaleOnly && !p.wholesalePrice) return false;
     if (moqFilter > 0 && p.moq < moqFilter) return false;
     if (p.price < priceRange[0] || p.price > priceRange[1]) return false;
@@ -176,6 +135,8 @@ function MarketplacePage() {
     if (selectedRatings.length > 0 && !selectedRatings.some((r) => Math.floor(p.rating) >= r)) return false;
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / productsPerPage));
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
@@ -462,24 +423,25 @@ function MarketplacePage() {
                     ref={categoryScrollRef}
                     className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5"
                   >
-                    {categories.map((cat) => {
-                      const Icon = cat.icon;
-                      return (
-                        <button
-                          key={cat.id}
-                          onClick={() => setSelectedCategory(cat.id)}
-                          className={clsx(
-                            'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200',
-                            selectedCategory === cat.id
-                              ? 'bg-zumbii-600 text-white shadow-md shadow-zumbii-600/20'
-                              : 'bg-surface-tertiary text-text-secondary hover:bg-zumbii-50 hover:text-zumbii-600'
-                          )}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          {cat.label}
-                        </button>
-                      );
-                    })}
+                    {categoryOptions.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={clsx(
+                          'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200',
+                          selectedCategory === cat.id
+                            ? 'bg-zumbii-600 text-white shadow-md shadow-zumbii-600/20'
+                            : 'bg-surface-tertiary text-text-secondary hover:bg-zumbii-50 hover:text-zumbii-600'
+                        )}
+                      >
+                        {cat.id === 'all' ? (
+                          <Sparkles className="w-3.5 h-3.5" />
+                        ) : (
+                          <Package className="w-3.5 h-3.5" />
+                        )}
+                        {cat.label}
+                      </button>
+                    ))}
                   </div>
                   <button
                     onClick={() => scrollCategory('right')}
@@ -660,6 +622,16 @@ function MarketplacePage() {
                 </div>
               )}
 
+              {loading ? (
+                <div className="flex items-center justify-center gap-2 py-24 text-text-tertiary text-sm">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Loading products...
+                </div>
+              ) : loadError ? (
+                <div className="text-center py-20">
+                  <p className="text-sm text-red-600">{loadError}</p>
+                </div>
+              ) : (
               <AnimatePresence mode="wait">
                 {paginatedProducts.length > 0 ? (
                   <motion.div
@@ -706,8 +678,9 @@ function MarketplacePage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+              )}
 
-              {totalPages > 1 && (
+              {!loading && totalPages > 1 && (
                 <div className="mt-10 flex items-center justify-center gap-2">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -745,17 +718,18 @@ function MarketplacePage() {
           </div>
         </div>
 
+        {products.length > 0 && (
         <section className="border-t border-border py-8 lg:py-10">
           <div className="section-padding">
             <div className="flex items-center gap-2 mb-5">
               <Clock className="w-4 h-4 text-text-tertiary" />
-              <h2 className="text-sm font-semibold text-text-primary">Recently Viewed</h2>
+              <h2 className="text-sm font-semibold text-text-primary">More to Explore</h2>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {recentlyViewed.map((product) => (
+              {products.slice(0, 6).map((product) => (
                 <Link
                   key={product.id}
-                  href={`/products/${product.slug}`}
+                  href={`/product/${product.slug}`}
                   className="group flex-shrink-0 w-36"
                 >
                   <div className="aspect-square rounded-xl overflow-hidden bg-surface-tertiary mb-2">
@@ -778,6 +752,7 @@ function MarketplacePage() {
             </div>
           </div>
         </section>
+        )}
       </div>
 
       <AnimatePresence>
@@ -830,6 +805,14 @@ function MarketplacePage() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function MarketplacePage() {
+  return (
+    <Suspense fallback={null}>
+      <MarketplaceContent />
+    </Suspense>
   );
 }
 

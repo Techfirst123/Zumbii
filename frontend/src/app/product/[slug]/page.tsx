@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
@@ -13,9 +14,7 @@ import {
   Star,
   Check,
   Download,
-  FileText,
   Award,
-  Truck,
   Shield,
   Store,
   Clock,
@@ -40,6 +39,7 @@ import {
   X,
   AlertCircle,
   MessageCircle,
+  Loader2,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import Container from '@/components/ui/container';
@@ -48,189 +48,12 @@ import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { StarRating } from '@/components/ui/StarRating';
 import { ProductCard } from '@/components/ui/ProductCard';
+import { PincodeChecker } from '@/components/ui/PincodeChecker';
 import type { Product, Review, Seller } from '@/types';
-
-const placeholderProduct: Product = {
-  id: 'prod-001',
-  name: 'Industrial Grade Wireless Noise-Cancelling Headphones',
-  slug: 'industrial-wireless-headphones-pro-x1',
-  description:
-    'Engineered for professionals who demand exceptional audio clarity and immersive sound isolation. The Pro X1 features adaptive noise cancellation with 40dB reduction, 60-hour battery life, and memory foam ear cushions wrapped in premium protein leather. Ideal for call centers, studios, and industrial environments.',
-  shortDescription:
-    'Professional-grade wireless headphones with adaptive ANC, 60h battery, and premium build.',
-  price: 12499,
-  wholesalePrice: 8999,
-  comparePrice: 17999,
-  images: [
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-    'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=800&q=80',
-    'https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=800&q=80',
-    'https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=800&q=80',
-    'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&q=80',
-  ],
-  video: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-  category: {
-    id: 'cat-01',
-    name: 'Electronics',
-    slug: 'electronics',
-    description: '',
-    image: '',
-    icon: 'Smartphone',
-    children: [],
-    productCount: 1200,
-  },
-  brand: {
-    id: 'br-01',
-    name: 'SoundPro Industries',
-    slug: 'soundpro',
-    logo: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200&q=80',
-    description: 'Premium audio solutions since 2010',
-    productCount: 45,
-  },
-  seller: {
-    id: 'sel-001',
-    businessName: 'TechGadgets India Pvt Ltd',
-    businessType: 'Manufacturer & Distributor',
-    logo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&q=80',
-    rating: 4.7,
-    reviewCount: 1234,
-    verified: true,
-    gstVerified: true,
-    panVerified: true,
-    location: 'Bengaluru, Karnataka',
-    responseTime: 'Within 2 hours',
-    followerCount: 5670,
-  },
-  sku: 'SP-PROX1-BLK-001',
-  gstRate: 18,
-  moq: 5,
-  stock: 247,
-  availableQuantity: 5000,
-  rating: 4.6,
-  reviewCount: 892,
-  specifications: [
-    { label: 'Driver Size', value: '40mm Neodymium' },
-    { label: 'Frequency Response', value: '20Hz - 40kHz' },
-    { label: 'Impedance', value: '32Ω' },
-    { label: 'Bluetooth Version', value: '5.3' },
-    { label: 'Codec Support', value: 'SBC, AAC, LDAC, aptX HD' },
-    { label: 'Noise Cancellation', value: 'Adaptive ANC up to 40dB' },
-    { label: 'Battery Life', value: '60 hours (ANC on)' },
-    { label: 'Charging', value: 'USB-C, Fast Charge (10 min = 5 hrs)' },
-    { label: 'Weight', value: '250g' },
-    { label: 'Warranty', value: '2 Years' },
-  ],
-  features: [
-    'Adaptive Active Noise Cancellation with 40dB reduction',
-    'Hi-Res Audio certified with LDAC support',
-    '60-hour battery life with quick charge capability',
-    'Premium memory foam ear cushions with protein leather',
-    'Foldable design with hard carrying case included',
-    'Multipoint connectivity for up to 3 devices',
-    'Built-in AI-powered microphone for crystal-clear calls',
-    'IPX5 water resistance for workout and outdoor use',
-  ],
-  downloads: [
-    { label: 'User Manual (PDF)', url: '#', size: '2.4 MB' },
-    { label: 'Quick Start Guide', url: '#', size: '0.8 MB' },
-    { label: 'Product Datasheet', url: '#', size: '1.2 MB' },
-    { label: 'Compliance Certificate', url: '#', size: '0.5 MB' },
-  ],
-  certificates: [
-    'BIS Certified (ISI Mark)',
-    'RoHS Compliant',
-    'CE Marking',
-    'FCC Certified',
-  ],
-  tags: ['headphones', 'wireless', 'anc', 'professional', 'audio'],
-  isFeatured: true,
-  isNew: true,
-  status: 'active',
-  createdAt: '2025-12-01T00:00:00Z',
-  updatedAt: '2026-03-15T00:00:00Z',
-};
-
-const technicalDocuments = [
-  { label: 'Technical Specification Sheet', url: '#', size: '1.8 MB', format: 'PDF' },
-  { label: 'Circuit Diagram', url: '#', size: '3.2 MB', format: 'DWG' },
-  { label: 'Safety Compliance Report', url: '#', size: '0.9 MB', format: 'PDF' },
-  { label: 'Test Lab Report', url: '#', size: '4.1 MB', format: 'PDF' },
-];
-
-const bulkPricing = [
-  { quantity: '5 - 20 units', discount: '5%', pricePerUnit: 8549 },
-  { quantity: '21 - 50 units', discount: '10%', pricePerUnit: 8099 },
-  { quantity: '51 - 100 units', discount: '15%', pricePerUnit: 7649 },
-  { quantity: '100+ units', discount: '20%', pricePerUnit: 7199 },
-];
-
-const reviews: Review[] = [
-  {
-    id: 'rev-001',
-    user: { name: 'Rahul Sharma', avatar: 'https://i.pravatar.cc/150?u=rahul' },
-    rating: 5,
-    title: 'Best investment for my home studio',
-    content:
-      'Absolutely blown away by the sound quality. The ANC is phenomenal — blocks out all ambient noise. Battery life is insane, I charge once a week. Highly recommend for professionals.',
-    images: [
-      'https://images.unsplash.com/photo-1599669454699-248893623440?w=400&q=80',
-    ],
-    createdAt: '2026-03-20',
-    helpful: 47,
-  },
-  {
-    id: 'rev-002',
-    user: { name: 'Priya Patel', avatar: 'https://i.pravatar.cc/150?u=priya' },
-    rating: 4,
-    title: 'Great for office use',
-    content:
-      'Excellent noise cancellation for open offices. Comfortable for all-day wear. Only wish the carrying case was a bit more compact.',
-    createdAt: '2026-03-15',
-    helpful: 32,
-  },
-  {
-    id: 'rev-003',
-    user: { name: 'Amit Kumar', avatar: 'https://i.pravatar.cc/150?u=amit' },
-    rating: 5,
-    title: 'Worth every rupee',
-    content:
-      'Upgraded from a budget pair and the difference is night and day. Crystal clear highs, punchy bass. Call quality is superb too.',
-    images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
-      'https://images.unsplash.com/photo-1484705969860-25b503a3d7d8?w=400&q=80',
-    ],
-    createdAt: '2026-03-10',
-    helpful: 28,
-  },
-  {
-    id: 'rev-004',
-    user: { name: 'Sneha Reddy', avatar: 'https://i.pravatar.cc/150?u=sneha' },
-    rating: 3,
-    title: 'Good but not perfect',
-    content:
-      'Sound quality is excellent but the touch controls can be a bit finicky. Also, the ear cushions attract dust easily. Overall a solid product though.',
-    createdAt: '2026-02-28',
-    helpful: 19,
-  },
-  {
-    id: 'rev-005',
-    user: { name: 'Vikram Singh', avatar: 'https://i.pravatar.cc/150?u=vikram' },
-    rating: 5,
-    title: 'Perfect for travel',
-    content:
-      'Used these on a 12-hour flight and they were a game changer. ANC made the engine noise disappear. Comfortable for long wear. Battery lasted the entire trip.',
-    createdAt: '2026-02-20',
-    helpful: 41,
-  },
-];
-
-const ratingBreakdown = [
-  { stars: 5, count: 534, percentage: 60 },
-  { stars: 4, count: 214, percentage: 24 },
-  { stars: 3, count: 89, percentage: 10 },
-  { stars: 2, count: 36, percentage: 4 },
-  { stars: 1, count: 19, percentage: 2 },
-];
+import { productsApi, ApiError } from '@/lib/api';
+import { mapBackendProduct, mapBackendReviews } from '@/lib/adapters';
+import { useCartStore } from '@/store/cartStore';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 const faqs = [
   {
@@ -256,98 +79,6 @@ const faqs = [
   {
     question: 'Can I get a sample before placing a bulk order?',
     answer: 'Yes, sample units are available at 50% of the MRP. The sample cost is adjustable against the first bulk order. Contact the seller directly to arrange a sample.',
-  },
-];
-
-const relatedProducts: Product[] = [
-  {
-    ...placeholderProduct,
-    id: 'rel-001',
-    name: 'Wireless Earbuds Pro X1 Mini',
-    slug: 'wireless-earbuds-pro-x1-mini',
-    price: 7999,
-    wholesalePrice: 5999,
-    comparePrice: 11999,
-    images: [
-      'https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400&q=80',
-    ],
-    rating: 4.4,
-    reviewCount: 567,
-    isNew: true,
-    isFeatured: false,
-    stock: 500,
-  },
-  {
-    ...placeholderProduct,
-    id: 'rel-002',
-    name: 'Bluetooth Speaker Boom 360',
-    slug: 'bluetooth-speaker-boom-360',
-    price: 5499,
-    wholesalePrice: 3999,
-    comparePrice: 7999,
-    images: [
-      'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80',
-    ],
-    rating: 4.5,
-    reviewCount: 342,
-    isNew: false,
-    isFeatured: false,
-    stock: 200,
-  },
-  {
-    ...placeholderProduct,
-    id: 'rel-003',
-    name: 'Studio Microphone Condenser Pro',
-    slug: 'studio-microphone-condenser-pro',
-    price: 14999,
-    wholesalePrice: 11999,
-    comparePrice: 19999,
-    images: [
-      'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400&q=80',
-    ],
-    rating: 4.8,
-    reviewCount: 234,
-    isNew: false,
-    isFeatured: true,
-    stock: 80,
-  },
-  {
-    ...placeholderProduct,
-    id: 'rel-004',
-    name: 'USB Audio Interface Dual Channel',
-    slug: 'usb-audio-interface-dual-channel',
-    price: 8999,
-    wholesalePrice: 6999,
-    comparePrice: 12999,
-    images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80',
-    ],
-    rating: 4.3,
-    reviewCount: 189,
-    isNew: true,
-    isFeatured: false,
-    stock: 150,
-  },
-];
-
-const frequentlyBought = [
-  {
-    id: 'fbt-001',
-    name: 'Hard Carrying Case',
-    price: 1499,
-    image: 'https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=200&q=80',
-  },
-  {
-    id: 'fbt-002',
-    name: 'USB-C to 3.5mm Adapter',
-    price: 399,
-    image: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=200&q=80',
-  },
-  {
-    id: 'fbt-003',
-    name: 'Ear Cushion Replacement Set',
-    price: 999,
-    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=200&q=80',
   },
 ];
 
@@ -510,79 +241,10 @@ function QuantitySelector({
   );
 }
 
-function DeliveryCalculator() {
-  const [pincode, setPincode] = useState('');
-  const [checked, setChecked] = useState(false);
-  const [estimating, setEstimating] = useState(false);
-
-  const handleCheck = () => {
-    if (pincode.length !== 6) return;
-    setEstimating(true);
-    setTimeout(() => {
-      setEstimating(false);
-      setChecked(true);
-    }, 1200);
-  };
-
-  return (
-    <div className="space-y-3">
-      <h4 className="font-semibold text-text-primary text-sm flex items-center gap-2">
-        <Truck className="w-4 h-4 text-zumbii-500" />
-        Estimated Delivery
-      </h4>
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={pincode}
-          onChange={(e) => {
-            const v = e.target.value.replace(/\D/g, '').slice(0, 6);
-            setPincode(v);
-            if (checked) setChecked(false);
-          }}
-          placeholder="Enter pincode"
-          maxLength={6}
-          className="flex-1 h-10 px-3 text-sm border border-border rounded-xl bg-surface-secondary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-zumbii-400 focus:ring-2 focus:ring-zumbii-100 transition-all"
-        />
-        <Button
-          size="sm"
-          onClick={handleCheck}
-          disabled={pincode.length !== 6 || estimating}
-          loading={estimating}
-        >
-          Check
-        </Button>
-      </div>
-      <AnimatePresence>
-        {checked && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="p-3 rounded-xl bg-emerald-50 border border-emerald-200"
-          >
-            <div className="flex items-start gap-2.5">
-              <Truck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-emerald-800">
-                  Delivery by Apr 3 - Apr 7
-                </p>
-                <p className="text-xs text-emerald-600 mt-0.5">
-                  Free shipping on orders above ₹999
-                </p>
-                <p className="text-xs text-emerald-500 mt-0.5">Ships from Bengaluru</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function RatingBreakdown() {
+function RatingBreakdown({ breakdown }: { breakdown: { stars: number; count: number; percentage: number }[] }) {
   return (
     <div className="space-y-2.5">
-      {ratingBreakdown.map((r) => (
+      {breakdown.map((r) => (
         <div key={r.stars} className="flex items-center gap-3">
           <span className="text-xs font-medium text-text-secondary w-12 flex items-center gap-1">
             {r.stars} <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -814,42 +476,125 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-export default function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function ProductPage() {
+  const params = useParams<{ slug: string }>();
+  const router = useRouter();
+  const addItem = useCartStore((s) => s.addItem);
+  const requireAuth = useRequireAuth();
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<string>('description');
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
 
-  const product = placeholderProduct;
+  useEffect(() => {
+    const slug = params?.slug;
+    if (!slug) return;
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setNotFound(false);
+      try {
+        const raw = await productsApi.getBySlug(slug);
+        if (cancelled) return;
+        setProduct(mapBackendProduct(raw));
+        setReviews(mapBackendReviews(raw.reviews));
+        setQuantity(raw.minOrderQty > 1 ? raw.minOrderQty : 1);
+        productsApi
+          .getRelated(raw.id)
+          .then((related) => {
+            if (!cancelled) setRelatedProducts(related.map(mapBackendProduct));
+          })
+          .catch(() => {});
+      } catch (err) {
+        if (!cancelled) setNotFound(!(err instanceof ApiError) || err.status === 404);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [params?.slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-zumbii-500" />
+      </div>
+    );
+  }
+
+  if (notFound || !product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
+        <h1 className="text-2xl font-bold text-text-primary">Product not found</h1>
+        <p className="text-text-tertiary">This product may have been removed or is no longer available.</p>
+        <Link href="/marketplace">
+          <Button>Back to Marketplace</Button>
+        </Link>
+      </div>
+    );
+  }
+
   const discount = product.comparePrice
     ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
     : 0;
 
   const gstAmount = Math.round(product.price * (product.gstRate / 100));
   const totalWithGst = product.price + gstAmount;
-  const wholesaleGst = product.wholesalePrice
-    ? Math.round(product.wholesalePrice * (product.gstRate / 100))
-    : 0;
-  const wholesaleTotal = product.wholesalePrice
-    ? product.wholesalePrice + wholesaleGst
-    : null;
 
-  const handleAddToCart = () => {
+  const ratingBreakdown = [5, 4, 3, 2, 1].map((stars) => {
+    const count = reviews.filter((r) => r.rating === stars).length;
+    return {
+      stars,
+      count,
+      percentage: reviews.length ? Math.round((count / reviews.length) * 100) : 0,
+    };
+  });
+
+  const handleAddToCart = (): boolean => {
+    if (!requireAuth()) return false;
+    addItem({
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      image: product.images[0],
+      price: product.price,
+      quantity,
+      maxQuantity: Math.max(product.stock, 1),
+      seller: product.seller.businessName,
+    });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
+    return true;
+  };
+
+  const handleBuyNow = () => {
+    if (!handleAddToCart()) return;
+    router.push('/checkout');
   };
 
   const tabs = [
     { id: 'description', label: 'Description' },
-    { id: 'specifications', label: 'Specifications' },
-    { id: 'features', label: 'Features' },
-    { id: 'reviews', label: `Reviews (${product.reviewCount})` },
+    ...(product.specifications.length ? [{ id: 'specifications', label: 'Specifications' }] : []),
+    ...(product.features.length ? [{ id: 'features', label: 'Features' }] : []),
+    { id: 'reviews', label: `Reviews (${reviews.length})` },
     { id: 'faq', label: 'FAQ' },
   ];
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
+    <div className="min-h-screen bg-surface-secondary pt-16 lg:pt-20">
       <div className="border-b border-border bg-white">
         <Container className="py-3">
           <nav className="flex items-center gap-2 text-xs text-text-tertiary">
@@ -880,12 +625,6 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 <div className="flex flex-wrap gap-2">
                   {product.isNew && <Badge variant="new">New Launch</Badge>}
                   {discount > 0 && <Badge variant="sale">{discount}% OFF</Badge>}
-                  {product.wholesalePrice && (
-                    <Badge variant="success">
-                      <Package className="w-3 h-3" />
-                      Wholesale Available
-                    </Badge>
-                  )}
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary leading-tight tracking-tight">
@@ -938,27 +677,6 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   </span>
                 </p>
 
-                {product.wholesalePrice && (
-                  <div className="pt-3 border-t border-border">
-                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <Package className="w-3.5 h-3.5" />
-                        Wholesale Price
-                      </p>
-                      <p className="mt-1 text-xl font-bold text-emerald-800">
-                        ₹{product.wholesalePrice.toLocaleString('en-IN')}
-                        <span className="text-sm font-normal text-emerald-600"> / unit</span>
-                      </p>
-                      <p className="text-xs text-emerald-600 mt-0.5">
-                        +₹{wholesaleGst.toLocaleString('en-IN')} GST | Total: ₹{wholesaleTotal?.toLocaleString('en-IN')}
-                      </p>
-                      <p className="text-xs text-emerald-500 mt-0.5">
-                        MOQ: {product.moq} units | Save up to ₹{(product.price - product.wholesalePrice).toLocaleString('en-IN')} per unit
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 <div className="flex flex-wrap gap-4 pt-1 text-sm">
                   <div className="flex items-center gap-1.5 text-text-secondary">
                     <Package className="w-4 h-4 text-text-tertiary" />
@@ -993,6 +711,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     size="lg"
+                    disabled={product.stock === 0}
                     className={clsx(
                       'flex-1 transition-all',
                       addedToCart && 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
@@ -1004,6 +723,8 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         <CheckCircle2 className="w-5 h-5" />
                         Added to Cart
                       </>
+                    ) : product.stock === 0 ? (
+                      'Out of Stock'
                     ) : (
                       <>
                         <ShoppingCart className="w-5 h-5" />
@@ -1011,7 +732,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                       </>
                     )}
                   </Button>
-                  <Button variant="secondary" size="lg" className="flex-1">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="flex-1"
+                    disabled={product.stock === 0}
+                    onClick={handleBuyNow}
+                  >
                     <Zap className="w-5 h-5" />
                     Buy Now
                   </Button>
@@ -1034,7 +761,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             </FadeView>
 
             <FadeView>
-              <DeliveryCalculator />
+              <PincodeChecker />
             </FadeView>
 
             <FadeView>
@@ -1074,7 +801,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         </div>
       </Container>
 
-      <div className="border-b border-border bg-white sticky top-16 z-20">
+      <div className="border-b border-border bg-white sticky top-16 lg:top-20 z-20">
         <Container>
           <div className="flex overflow-x-auto gap-1 -mb-px">
             {tabs.map((tab) => (
@@ -1174,10 +901,10 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     <StarRating rating={product.rating} size="md" />
                   </div>
                   <p className="mt-1.5 text-sm text-text-tertiary">
-                    {product.reviewCount} verified reviews
+                    {reviews.length} verified reviews
                   </p>
                 </div>
-                <RatingBreakdown />
+                <RatingBreakdown breakdown={ratingBreakdown} />
                 <div className="pt-4 border-t border-border">
                   <Button variant="outline" size="sm" className="w-full">
                     Write a Review
@@ -1185,14 +912,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
               </Card>
               <div className="lg:col-span-2 space-y-4">
-                {reviews.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
-                <div className="text-center pt-2">
-                  <Button variant="ghost" size="sm">
-                    View All Reviews <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
+                {reviews.length > 0 ? (
+                  reviews.map((review) => <ReviewCard key={review.id} review={review} />)
+                ) : (
+                  <div className="text-center py-12 text-text-tertiary text-sm">
+                    No reviews yet — be the first to review this product.
+                  </div>
+                )}
               </div>
             </div>
           </FadeView>
@@ -1208,61 +934,11 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         )}
       </Container>
 
-      <section className="py-12 lg:py-16 bg-white border-y border-border">
-        <Container>
-          <FadeView>
-            <h3 className="text-xl font-bold text-text-primary mb-6">Bulk Pricing</h3>
-            <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-surface-tertiary">
-                    <th className="text-left px-4 py-3.5 font-semibold text-text-primary">Quantity</th>
-                    <th className="text-left px-4 py-3.5 font-semibold text-text-primary">Discount</th>
-                    <th className="text-left px-4 py-3.5 font-semibold text-text-primary">Price per Unit</th>
-                    <th className="text-left px-4 py-3.5 font-semibold text-text-primary">Savings</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {bulkPricing.map((tier, i) => {
-                    const savings = product.price - tier.pricePerUnit;
-                    return (
-                      <motion.tr
-                        key={i}
-                        initial={{ opacity: 0, y: 10 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: i * 0.08 }}
-                        className={clsx(
-                          'transition-colors',
-                          i === bulkPricing.length - 1 ? 'bg-emerald-50/50' : 'hover:bg-surface-secondary'
-                        )}
-                      >
-                        <td className="px-4 py-3.5 font-medium text-text-primary">{tier.quantity}</td>
-                        <td className="px-4 py-3.5">
-                          <Badge variant="success" size="sm">{tier.discount}</Badge>
-                        </td>
-                        <td className="px-4 py-3.5 font-semibold text-text-primary">
-                          ₹{tier.pricePerUnit.toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-4 py-3.5 text-emerald-600 font-medium">
-                          Save ₹{savings.toLocaleString('en-IN')}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-3 text-xs text-text-tertiary">
-              * Bulk pricing applies to orders above MOQ. Contact seller for custom quantities.
-            </p>
-          </FadeView>
-        </Container>
-      </section>
-
+      {(product.downloads.length > 0 || product.certificates.length > 0) && (
       <section className="py-12 lg:py-16">
         <Container>
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+            {product.downloads.length > 0 && (
             <FadeView>
               <Card glass className="p-6 space-y-4">
                 <h4 className="font-semibold text-text-primary text-sm flex items-center gap-2">
@@ -1286,34 +962,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
               </Card>
             </FadeView>
+            )}
 
-            <FadeView>
-              <Card glass className="p-6 space-y-4">
-                <h4 className="font-semibold text-text-primary text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-zumbii-500" />
-                  Technical Documents
-                </h4>
-                <div className="space-y-2">
-                  {technicalDocuments.map((doc, i) => (
-                    <a
-                      key={i}
-                      href={doc.url}
-                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-surface-secondary/50 border border-border hover:bg-zumbii-50 hover:border-zumbii-200 transition-colors group"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <FileText className="w-4 h-4 text-zumbii-500 shrink-0" />
-                        <div className="min-w-0">
-                          <span className="text-sm text-text-primary truncate block">{doc.label}</span>
-                          <span className="text-[10px] text-text-tertiary">{doc.format}</span>
-                        </div>
-                      </div>
-                      <span className="text-xs text-text-tertiary shrink-0">{doc.size}</span>
-                    </a>
-                  ))}
-                </div>
-              </Card>
-            </FadeView>
-
+            {product.certificates.length > 0 && (
             <FadeView>
               <Card glass className="p-6 space-y-4">
                 <h4 className="font-semibold text-text-primary text-sm flex items-center gap-2">
@@ -1335,54 +986,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
               </Card>
             </FadeView>
+            )}
           </div>
         </Container>
       </section>
+      )}
 
-      <section className="py-12 lg:py-16 bg-white border-y border-border">
-        <Container>
-          <FadeView>
-            <h3 className="text-xl font-bold text-text-primary mb-6">Frequently Bought Together</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-4 flex items-center gap-3 border-2 border-zumbii-200 bg-zumbii-50/30">
-                <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-surface-tertiary shrink-0">
-                  <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="64px" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-text-secondary truncate line-clamp-2">{product.name}</p>
-                  <p className="text-sm font-bold text-text-primary mt-1">₹{product.price.toLocaleString('en-IN')}</p>
-                </div>
-              </Card>
-              {frequentlyBought.map((item) => (
-                <Card key={item.id} className="p-4 flex items-center gap-3">
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-surface-tertiary shrink-0">
-                    <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-text-secondary truncate line-clamp-2">{item.name}</p>
-                    <p className="text-sm font-bold text-text-primary mt-1">₹{item.price.toLocaleString('en-IN')}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-            <div className="mt-4 p-4 rounded-xl bg-surface-secondary border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-sm text-text-secondary">
-                  Bundle total: <span className="font-bold text-text-primary">
-                    ₹{(product.price + frequentlyBought.reduce((s, i) => s + i.price, 0)).toLocaleString('en-IN')}
-                  </span>
-                </p>
-                <p className="text-xs text-emerald-600 font-medium">Add all 4 items to cart</p>
-              </div>
-              <Button size="sm">
-                <ShoppingCart className="w-4 h-4" />
-                Add All to Cart
-              </Button>
-            </div>
-          </FadeView>
-        </Container>
-      </section>
-
+      {relatedProducts.length > 0 && (
       <section className="py-12 lg:py-16">
         <Container>
           <FadeView>
@@ -1397,6 +1007,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           </Carousel>
         </Container>
       </section>
+      )}
 
       <section className="py-8 border-t border-border bg-white">
         <Container>

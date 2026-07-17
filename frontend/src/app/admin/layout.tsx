@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import { useAuthStore, ADMIN_ROLES } from "@/store/authStore";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -33,8 +34,6 @@ import {
   Search,
   Menu,
   LogOut,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -64,8 +63,26 @@ const sidebarLinks = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuthStore();
+  const isLoginPage = pathname === "/admin/login";
+
+  useEffect(() => {
+    if (isLoginPage) return;
+    if (!user || !ADMIN_ROLES.includes(user.role)) {
+      router.replace("/admin/login");
+    }
+  }, [isLoginPage, user, router]);
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  if (!user || !ADMIN_ROLES.includes(user.role)) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -157,22 +174,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!collapsed ? (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zumbii-400 to-purple-500 flex items-center justify-center text-xs font-bold shrink-0">
-                A
+                {(user.firstName?.[0] || user.email[0]).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Admin</p>
-                <p className="text-xs text-slate-400 truncate">info@zumbii.com</p>
+                <p className="text-sm font-medium truncate">{user.firstName || "Admin"}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
               </div>
-              <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+              <button
+                onClick={() => {
+                  logout();
+                  router.push("/admin/login");
+                }}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+                aria-label="Log out"
+              >
                 <LogOut size={16} />
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zumbii-400 to-purple-500 flex items-center justify-center text-xs font-bold">
-                A
+                {(user.firstName?.[0] || user.email[0]).toUpperCase()}
               </div>
-              <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white">
+              <button
+                onClick={() => {
+                  logout();
+                  router.push("/admin/login");
+                }}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+                aria-label="Log out"
+              >
                 <LogOut size={16} />
               </button>
             </div>
