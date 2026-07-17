@@ -6,7 +6,6 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
-  hasHydrated: boolean;
   setAuth: (data: { user: AuthUser; accessToken: string; refreshToken: string }) => void;
   logout: () => void;
 }
@@ -17,15 +16,11 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      hasHydrated: false,
       setAuth: ({ user, accessToken, refreshToken }) =>
         set({ user, accessToken, refreshToken }),
       logout: () => set({ user: null, accessToken: null, refreshToken: null }),
     }),
-    {
-      name: 'zumbii-auth',
-      onRehydrateStorage: () => () => useAuthStore.setState({ hasHydrated: true }),
-    }
+    { name: 'zumbii-auth' }
   )
 );
 
