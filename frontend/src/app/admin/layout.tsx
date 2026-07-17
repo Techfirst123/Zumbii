@@ -66,21 +66,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user, logout, hasHydrated } = useAuthStore();
   const isLoginPage = pathname === "/admin/login";
 
   useEffect(() => {
-    if (isLoginPage) return;
+    if (isLoginPage || !hasHydrated) return;
     if (!user || !ADMIN_ROLES.includes(user.role)) {
       router.replace("/admin/login");
     }
-  }, [isLoginPage, user, router]);
+  }, [isLoginPage, hasHydrated, user, router]);
 
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  if (!user || !ADMIN_ROLES.includes(user.role)) {
+  if (!hasHydrated || !user || !ADMIN_ROLES.includes(user.role)) {
     return null;
   }
 
