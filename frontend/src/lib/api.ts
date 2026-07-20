@@ -114,7 +114,10 @@ export interface BackendCategory {
   image?: string | null;
   icon?: string | null;
   parentId?: string | null;
+  parent?: BackendCategory | null;
   isActive: boolean;
+  sortOrder?: number;
+  _count?: { products: number; children?: number };
 }
 
 export interface BackendProduct {
@@ -234,8 +237,14 @@ export const deliveryApi = {
 
 export const categoriesApi = {
   list: () => api.get<BackendCategory[]>('/categories', { auth: false }),
+  listAdmin: () => api.get<BackendCategory[]>('/categories/admin/all'),
   getBySlug: (slug: string) =>
     api.get<BackendCategory>(`/categories/slug/${slug}`, { auth: false }),
+  create: (payload: Record<string, unknown>) =>
+    api.post<BackendCategory>('/categories', payload),
+  update: (id: string, payload: Record<string, unknown>) =>
+    api.put<BackendCategory>(`/categories/${id}`, payload),
+  remove: (id: string) => api.delete<{ message: string }>(`/categories/${id}`),
 };
 
 export const productsApi = {

@@ -44,6 +44,18 @@ export class CategoriesService {
     return categories;
   }
 
+  async findAllForAdmin() {
+    const categories = await this.prisma.category.findMany({
+      include: {
+        parent: true,
+        _count: { select: { products: true, children: true } },
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    return categories;
+  }
+
   async findOne(id: string) {
     const category = await this.prisma.category.findUnique({
       where: { id },

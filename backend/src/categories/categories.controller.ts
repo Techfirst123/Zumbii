@@ -46,6 +46,15 @@ export class CategoriesController {
     return this.categoriesService.getTree();
   }
 
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all categories including inactive (admin)' })
+  findAllForAdmin() {
+    return this.categoriesService.findAllForAdmin();
+  }
+
   @Public()
   @Get('slug/:slug')
   @ApiOperation({ summary: 'Get category by slug' })

@@ -40,7 +40,7 @@ const sidebarLinks = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { label: "Products", href: "/admin/products", icon: Package },
-  { label: "Categories", href: "#", icon: FolderTree },
+  { label: "Categories", href: "/admin/categories", icon: FolderTree },
   { label: "Brands", href: "#", icon: Tags },
   { label: "Customers", href: "#", icon: Users },
   { label: "Businesses", href: "#", icon: Building2 },
