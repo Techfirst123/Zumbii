@@ -48,8 +48,9 @@ import Card from "@/components/ui/Card";
 import Container from "@/components/ui/container";
 import SectionHeader from "@/components/ui/section-header";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { productsApi, ApiError } from "@/lib/api";
+import { productsApi, categoriesApi, ApiError, type BackendCategory } from "@/lib/api";
 import { mapBackendProduct } from "@/lib/adapters";
+import { categoryVisual } from "@/lib/categoryVisuals";
 import type { Product } from "@/types";
 
 const fadeInUp = {
@@ -90,17 +91,6 @@ const heroCardPositions = [
   { classes: "top-[6%] left-[12%]", rotate: -4, z: 3 },
   { classes: "top-[30%] right-[2%]", rotate: 3, z: 2 },
   { classes: "bottom-[5%] left-[26%]", rotate: -2, z: 1 },
-];
-
-const categories = [
-  { name: "Electronics", icon: Zap, count: "12,450+", color: "from-blue-500 to-cyan-400" },
-  { name: "Fashion", icon: Sparkles, count: "8,230+", color: "from-pink-500 to-rose-400" },
-  { name: "Home & Living", icon: Package, count: "6,780+", color: "from-amber-500 to-orange-400" },
-  { name: "Industrial", icon: Building2, count: "4,560+", color: "from-slate-600 to-slate-500" },
-  { name: "Food & Beverages", icon: Leaf, count: "3,890+", color: "from-emerald-500 to-green-400" },
-  { name: "Health & Beauty", icon: HeartHandshake, count: "5,120+", color: "from-violet-500 to-purple-400" },
-  { name: "Automotive", icon: Truck, count: "2,340+", color: "from-red-500 to-rose-400" },
-  { name: "Sports & Fitness", icon: TrendingUp, count: "3,670+", color: "from-teal-500 to-cyan-400" },
 ];
 
 const testimonials = [
@@ -476,9 +466,22 @@ function FeaturedProductsSection({ products, loading }: { products: Product[]; l
 }
 
 function CategoriesSection() {
-  const iconMap: Record<string, React.ElementType> = {
-    Zap, Sparkles, Package, Building2, Leaf, HeartHandshake, Truck, TrendingUp,
-  };
+  const [categories, setCategories] = useState<BackendCategory[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    categoriesApi
+      .list()
+      .then((res) => {
+        if (!cancelled) setCategories(res.filter((c) => !c.parentId));
+      })
+      .catch((err) => console.error(err instanceof ApiError ? err.message : err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (categories.length === 0) return null;
 
   return (
     <section className="py-20 lg:py-28 bg-surface-secondary">
@@ -496,20 +499,22 @@ function CategoriesSection() {
           variants={staggerContainer}
           className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6"
         >
-          {categories.map((cat) => {
-            const IconComponent = iconMap[cat.icon.name] || Package;
+          {categories.map((cat, i) => {
+            const { icon: IconComponent, gradient } = categoryVisual(i);
             return (
-              <motion.div key={cat.name} variants={fadeInUp}>
+              <motion.div key={cat.id} variants={fadeInUp}>
                 <Link
-                  href="/categories"
+                  href={`/category/${cat.slug}`}
                   className="group block"
                 >
                   <Card className="p-6 sm:p-8 text-center">
-                    <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${cat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                       <IconComponent className="w-7 h-7 text-white" />
                     </div>
                     <h3 className="mt-4 font-semibold text-text-primary text-sm sm:text-base">{cat.name}</h3>
-                    <p className="mt-1 text-xs text-text-tertiary">{cat.count} products</p>
+                    <p className="mt-1 text-xs text-text-tertiary">
+                      {cat._count?.products ?? 0} products
+                    </p>
                   </Card>
                 </Link>
               </motion.div>
