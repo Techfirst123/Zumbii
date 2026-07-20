@@ -4,7 +4,6 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
-import * as path from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -12,11 +11,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-
-  app.useStaticAssets(
-    path.join(process.cwd(), process.env.UPLOAD_DIR || 'uploads'),
-    { prefix: '/uploads/' },
-  );
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());

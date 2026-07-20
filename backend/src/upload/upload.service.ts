@@ -1,24 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import * as path from 'path';
-import * as fs from 'fs';
+import { put, del } from '@vercel/blob';
 
 @Injectable()
 export class UploadService {
-  private uploadDir = process.env.UPLOAD_DIR || './uploads';
-
-  constructor() {
-    try {
-      if (!fs.existsSync(this.uploadDir)) {
-        fs.mkdirSync(this.uploadDir, { recursive: true });
-      }
-    } catch {
-      this.uploadDir = '/tmp/uploads';
-      if (!fs.existsSync(this.uploadDir)) {
-        fs.mkdirSync(this.uploadDir, { recursive: true });
-      }
-    }
-  }
-
   async uploadFile(
     file: Express.Multer.File,
     subfolder = 'general',
@@ -27,19 +11,13 @@ export class UploadService {
       throw new BadRequestException('No file provided');
     }
 
-    const targetDir = path.join(this.uploadDir, subfolder);
+    const blob = await put(`${subfolder}/${file.originalname}`, file.buffer, {
+      access: 'public',
+      addRandomSuffix: true,
+      contentType: file.mimetype,
+    });
 
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-
-    const ext = path.extname(file.originalname);
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
-    const filepath = path.join(targetDir, filename);
-
-    fs.writeFileSync(filepath, file.buffer);
-
-    return `/uploads/${subfolder}/${filename}`;
+    return blob.url;
   }
 
   async uploadMultiple(
@@ -58,11 +36,11 @@ export class UploadService {
   }
 
   async deleteFile(fileUrl: string): Promise<void> {
-    const filepath = path.join(process.cwd(), fileUrl);
-
-    if (fs.existsSync(filepath)) {
-      fs.unlinkSync(filepath);
+    if (!fileUrl.startsWith('http')) {
+      return;
     }
+
+    await del(fileUrl);
   }
 
   validateImage(file: Express.Multer.File): boolean {
