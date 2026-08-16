@@ -71,14 +71,21 @@ export default function Navbar() {
   if (pathname?.startsWith('/admin')) return null;
 
   return (
-    <header
-      className={clsx(
-        'fixed inset-x-0 top-0 z-40 transition-all duration-500',
-        scrolled
-          ? 'bg-white/80 shadow-sm shadow-black/5 backdrop-blur-xl'
-          : 'bg-white/0'
-      )}
-    >
+    <div className="fixed inset-x-0 top-0 z-40">
+      <div className="bg-zumbii-950 py-1.5 text-center text-[11px] font-medium text-gold-400 sm:text-xs">
+        Become a Zumbii Partner —{' '}
+        <Link href="/franchise" className="underline underline-offset-2 hover:text-white">
+          Explore Franchise →
+        </Link>
+      </div>
+      <header
+        className={clsx(
+          'transition-all duration-500',
+          scrolled
+            ? 'bg-white/80 shadow-sm shadow-black/5 backdrop-blur-xl'
+            : 'bg-white/0'
+        )}
+      >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4 lg:h-20">
           {/* Mobile menu button */}
@@ -244,7 +251,7 @@ export default function Navbar() {
             >
               <ShoppingCart className="h-5 w-5" />
               {displayedCartCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-zumbii-600 px-1 text-[10px] font-bold leading-none text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-brand-red-600 px-1 text-[10px] font-bold leading-none text-white">
                   {displayedCartCount}
                 </span>
               )}
@@ -486,7 +493,7 @@ export default function Navbar() {
                     <ShoppingCart className="h-4 w-4" />
                     Cart
                     {displayedCartCount > 0 && (
-                      <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-zumbii-600 px-1.5 text-[10px] font-bold text-white">
+                      <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-brand-red-600 px-1.5 text-[10px] font-bold text-white">
                         {displayedCartCount}
                       </span>
                     )}
@@ -510,6 +517,7 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+      </header>
+    </div>
   );
 }

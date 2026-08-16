@@ -128,7 +128,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-zumbii-600 text-white text-xs font-medium rounded-lg hover:bg-zumbii-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-gold-500 text-zumbii-950 text-xs font-semibold rounded-lg hover:bg-gold-600 transition-colors"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
                 Add to Cart

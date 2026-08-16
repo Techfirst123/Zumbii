@@ -52,7 +52,7 @@ function LoginForm() {
           transition={{ duration: 0.4 }}
         >
           <div className="flex flex-col items-center mb-6 text-center">
-            <h1 className="text-2xl font-bold text-text-primary">
+            <h1 className="text-2xl font-bold text-zumbii-950">
               {mode === 'login' ? 'Welcome back' : 'Create your account'}
             </h1>
             <p className="text-sm text-text-tertiary mt-1">
@@ -134,7 +134,7 @@ function LoginForm() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" loading={loading} disabled={loading}>
+              <Button type="submit" variant="gold" className="w-full" loading={loading} disabled={loading}>
                 {mode === 'login' ? <LogIn className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
                 {mode === 'login' ? 'Sign in' : 'Create account'}
               </Button>
@@ -149,7 +149,7 @@ function LoginForm() {
                 setError('');
                 setMode(mode === 'login' ? 'register' : 'login');
               }}
-              className="font-medium text-zumbii-600 hover:text-zumbii-700"
+              className="font-medium text-brand-red-600 hover:text-brand-red-700"
             >
               {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>

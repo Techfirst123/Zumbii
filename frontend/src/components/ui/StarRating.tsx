@@ -68,10 +68,10 @@ function StarRating({
               className={clsx(
                 'transition-all duration-150',
                 interactive
-                  ? 'cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zumbii-400 rounded-sm'
+                  ? 'cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 rounded-sm'
                   : 'cursor-default',
-                filled && 'text-amber-400',
-                partial && 'text-amber-400',
+                filled && 'text-gold-500',
+                partial && 'text-gold-500',
                 !filled && !partial && 'text-border'
               )}
               aria-label={interactive ? `${value} star${value > 1 ? 's' : ''}` : undefined}

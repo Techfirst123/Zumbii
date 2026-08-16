@@ -305,7 +305,7 @@ function MarketplaceContent() {
                     key={i}
                     className={clsx(
                       'w-3.5 h-3.5',
-                      i < r ? 'fill-amber-400 text-amber-400' : 'text-border'
+                      i < r ? 'fill-gold-500 text-gold-500' : 'text-border'
                     )}
                   />
                 ))}
@@ -430,7 +430,7 @@ function MarketplaceContent() {
                         className={clsx(
                           'flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all duration-200',
                           selectedCategory === cat.id
-                            ? 'bg-zumbii-600 text-white shadow-md shadow-zumbii-600/20'
+                            ? 'bg-gold-500 text-zumbii-950 shadow-md shadow-gold-500/30'
                             : 'bg-surface-tertiary text-text-secondary hover:bg-zumbii-50 hover:text-zumbii-600'
                         )}
                       >

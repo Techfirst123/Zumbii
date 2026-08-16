@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin,
@@ -41,6 +42,7 @@ import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
+import { useCartStore } from '@/store/cartStore';
 
 type Step = 'address' | 'shipping' | 'payment' | 'review';
 
@@ -123,12 +125,6 @@ const paymentMethods = [
   { id: 'wallet', name: 'Wallet', icon: Wallet, description: 'Zumbii Pay balance' },
 ];
 
-const cartItems = [
-  { id: '1', name: 'Premium Wireless Headphones Pro', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80', price: 2499, quantity: 1 },
-  { id: '2', name: 'Smart Watch Ultra X2', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80', price: 5999, quantity: 2 },
-  { id: '3', name: 'Organic Cotton T-Shirt Pack', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80', price: 1299, quantity: 1 },
-];
-
 const steps: { id: Step; label: string; icon: React.ElementType }[] = [
   { id: 'address', label: 'Address', icon: MapPin },
   { id: 'shipping', label: 'Shipping', icon: Truck },
@@ -137,6 +133,10 @@ const steps: { id: Step; label: string; icon: React.ElementType }[] = [
 ];
 
 function CheckoutPage() {
+  const router = useRouter();
+  const cartItems = useCartStore((s) => s.items);
+  const subtotal = useCartStore((s) => s.subtotal());
+  const clearCart = useCartStore((s) => s.clear);
   const [currentStep, setCurrentStep] = useState<Step>('address');
   const [selectedAddress, setSelectedAddress] = useState<string>('a1');
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -164,10 +164,16 @@ function CheckoutPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof AddressForm, string>>>({});
 
   const stepIndex = steps.findIndex((s) => s.id === currentStep);
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shippingCost = shippingMethods.find((s) => s.id === selectedShipping)?.price ?? 0;
   const tax = Math.round(subtotal * 0.12);
   const total = subtotal + shippingCost + tax;
+
+  useEffect(() => {
+    if (cartItems.length === 0 && !orderPlaced) {
+      router.replace('/cart');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems.length, orderPlaced]);
 
   const canProceed = () => {
     if (currentStep === 'address') return !!selectedAddress;
@@ -243,6 +249,7 @@ function CheckoutPage() {
     setOrderPlaced(true);
     const num = `ZUM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     setOrderNumber(num);
+    clearCart();
     toast.success('Order placed successfully!');
   };
 
@@ -272,9 +279,9 @@ function CheckoutPage() {
                 className={clsx(
                   'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300',
                   isCurrent
-                    ? 'bg-zumbii-600 text-white shadow-lg shadow-zumbii-600/30 scale-110'
+                    ? 'bg-zumbii-950 text-gold-400 ring-2 ring-gold-500 shadow-lg shadow-zumbii-950/30 scale-110'
                     : isActive
-                    ? 'bg-zumbii-600 text-white'
+                    ? 'bg-zumbii-950 text-white'
                     : 'bg-surface-tertiary text-text-tertiary'
                 )}
               >
@@ -345,7 +352,7 @@ function CheckoutPage() {
                     {addr.isDefault && <Badge variant="default" size="sm">Default</Badge>}
                     <div className={clsx(
                       'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium',
-                      addr.type === 'home' ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'
+                      addr.type === 'home' ? 'bg-zumbii-50 text-zumbii-700' : 'bg-gold-100 text-gold-800'
                     )}>
                       {addr.type === 'home' ? <Home className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
                       {addr.type}
@@ -451,7 +458,7 @@ function CheckoutPage() {
             >
               {method.popular && (
                 <div className="absolute top-0 right-0">
-                  <div className="bg-zumbii-600 text-white text-[10px] font-semibold px-3 py-1 rounded-bl-xl">
+                  <div className="bg-gold-500 text-zumbii-950 text-[10px] font-bold px-3 py-1 rounded-bl-xl">
                     POPULAR
                   </div>
                 </div>
@@ -711,7 +718,7 @@ function CheckoutPage() {
                 >
                   <div className="space-y-3 mb-4">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3">
+                      <div key={item.productId} className="flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-surface-tertiary shrink-0">
                           <Image src={item.image} alt={item.name} fill className="object-cover" sizes="48px" />
                         </div>
@@ -916,7 +923,7 @@ function CheckoutPage() {
                 <h3 className="text-sm font-bold text-text-primary mb-4">Order Summary</h3>
                 <div className="space-y-3 text-sm">
                   {cartItems.slice(0, 2).map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
+                    <div key={item.productId} className="flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-surface-tertiary shrink-0">
                         <Image src={item.image} alt={item.name} fill className="object-cover" sizes="48px" />
                       </div>
@@ -952,11 +959,11 @@ function CheckoutPage() {
                   </div>
                 </div>
               </Card>
-              <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-                <Shield className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="mt-4 p-4 rounded-2xl bg-leaf-50 border border-leaf-100 flex items-start gap-3">
+                <Shield className="w-5 h-5 text-leaf-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-semibold text-emerald-800">Secure Checkout</h4>
-                  <p className="text-[11px] text-emerald-700 mt-0.5">SSL encrypted & secure payment</p>
+                  <h4 className="text-xs font-semibold text-leaf-700">Secure Checkout</h4>
+                  <p className="text-[11px] text-leaf-600 mt-0.5">SSL encrypted & secure payment</p>
                 </div>
               </div>
             </div>

@@ -16,14 +16,14 @@ interface CategoryVisual {
 }
 
 const PALETTE: CategoryVisual[] = [
-  { icon: Zap, gradient: "from-blue-500 to-cyan-400" },
-  { icon: Sparkles, gradient: "from-pink-500 to-rose-400" },
-  { icon: Package, gradient: "from-amber-500 to-orange-400" },
-  { icon: Building2, gradient: "from-slate-600 to-slate-500" },
-  { icon: Leaf, gradient: "from-emerald-500 to-green-400" },
-  { icon: HeartHandshake, gradient: "from-violet-500 to-purple-400" },
-  { icon: Truck, gradient: "from-red-500 to-rose-400" },
-  { icon: TrendingUp, gradient: "from-teal-500 to-cyan-400" },
+  { icon: Zap, gradient: "from-zumbii-700 to-zumbii-500" },
+  { icon: Sparkles, gradient: "from-gold-500 to-gold-300" },
+  { icon: Package, gradient: "from-brand-red-600 to-brand-red-400" },
+  { icon: Building2, gradient: "from-zumbii-900 to-zumbii-700" },
+  { icon: Leaf, gradient: "from-leaf-600 to-leaf-500" },
+  { icon: HeartHandshake, gradient: "from-gold-600 to-gold-400" },
+  { icon: Truck, gradient: "from-brand-red-700 to-brand-red-500" },
+  { icon: TrendingUp, gradient: "from-zumbii-600 to-gold-500" },
 ];
 
 export function categoryVisual(index: number): CategoryVisual {

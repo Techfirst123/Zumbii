@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,37 +27,9 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { PincodeChecker } from '@/components/ui/PincodeChecker';
 import { useCartStore } from '@/store/cartStore';
-
-const suggestedProducts = [
-  {
-    id: 's1',
-    name: 'Portable Bluetooth Speaker',
-    image: 'https://images.unsplash.com/photo-1589003077984-894e133dabab?w=400&q=80',
-    price: 1799,
-    slug: 'portable-bluetooth-speaker',
-  },
-  {
-    id: 's2',
-    name: 'Wireless Charging Pad',
-    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&q=80',
-    price: 1499,
-    slug: 'wireless-charging-pad',
-  },
-  {
-    id: 's3',
-    name: 'Noise Cancelling Earbuds',
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12f032f11?w=400&q=80',
-    price: 4999,
-    slug: 'noise-cancelling-earbuds',
-  },
-  {
-    id: 's4',
-    name: 'Ergonomic Office Chair',
-    image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
-    price: 8999,
-    slug: 'ergonomic-office-chair',
-  },
-];
+import { productsApi, ApiError } from '@/lib/api';
+import { mapBackendProduct } from '@/lib/adapters';
+import type { Product } from '@/types';
 
 function CartPage() {
   const cartItems = useCartStore((s) => s.items);
@@ -67,6 +39,20 @@ function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    productsApi
+      .list({ limit: 4 })
+      .then((res) => {
+        if (!cancelled) setSuggestedProducts(res.data.map(mapBackendProduct));
+      })
+      .catch((err) => console.error(err instanceof ApiError ? err.message : err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const shipping = cartItems.length > 0 ? 99 : 0;
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -267,11 +253,11 @@ function CartPage() {
                   <h3 className="text-sm font-semibold text-text-primary">Apply Coupon</h3>
                 </div>
                 {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center justify-between bg-leaf-50 border border-leaf-100 rounded-xl px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Percent className="w-4 h-4 text-emerald-600" />
-                      <span className="text-sm font-medium text-emerald-700">{appliedCoupon}</span>
-                      <span className="text-xs text-emerald-600">({couponDiscount}% off)</span>
+                      <Percent className="w-4 h-4 text-leaf-600" />
+                      <span className="text-sm font-medium text-leaf-700">{appliedCoupon}</span>
+                      <span className="text-xs text-leaf-600">({couponDiscount}% off)</span>
                     </div>
                     <button
                       onClick={handleRemoveCoupon}
@@ -319,7 +305,7 @@ function CartPage() {
                       </div>
                       <span className="text-text-primary font-medium">
                         {shipping === 0 ? (
-                          <span className="text-emerald-600">Free</span>
+                          <span className="text-leaf-600">Free</span>
                         ) : (
                           `₹${shipping.toLocaleString('en-IN')}`
                         )}
@@ -331,11 +317,11 @@ function CartPage() {
                     </div>
                     {discount > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1.5 text-emerald-600">
+                        <div className="flex items-center gap-1.5 text-leaf-600">
                           <Percent className="w-3.5 h-3.5" />
                           Discount ({couponDiscount}%)
                         </div>
-                        <span className="text-emerald-600 font-medium">-₹{discount.toLocaleString('en-IN')}</span>
+                        <span className="text-leaf-600 font-medium">-₹{discount.toLocaleString('en-IN')}</span>
                       </div>
                     )}
                     <hr className="border-border" />
@@ -377,10 +363,11 @@ function CartPage() {
         )}
       </div>
 
+      {suggestedProducts.length > 0 && (
       <section className="border-t border-border py-10 lg:py-12">
         <div className="section-padding">
           <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-5 h-5 text-zumbii-600" />
+            <Sparkles className="w-5 h-5 text-gold-500" />
             <h2 className="text-lg font-bold text-text-primary">You May Also Like</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -393,7 +380,7 @@ function CartPage() {
                 <Card className="p-0 overflow-hidden">
                   <div className="aspect-square relative overflow-hidden bg-surface-tertiary">
                     <Image
-                      src={product.image}
+                      src={product.images[0] || '/placeholder.svg'}
                       alt={product.name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -414,6 +401,7 @@ function CartPage() {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

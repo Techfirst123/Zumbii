@@ -2,7 +2,7 @@ import { forwardRef, ButtonHTMLAttributes } from "react";
 import { clsx } from "clsx";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "white";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "white" | "gold";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
 }
@@ -21,6 +21,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             "border-2 border-zumbii-600 text-zumbii-600 hover:bg-zumbii-50 active:bg-zumbii-100": variant === "outline",
             "text-zumbii-600 hover:bg-zumbii-50 active:bg-zumbii-100": variant === "ghost",
             "bg-white/90 text-zumbii-700 hover:bg-white shadow-lg backdrop-blur-sm": variant === "white",
+            "bg-gold-500 text-zumbii-950 hover:bg-gold-600 active:bg-gold-700 shadow-md shadow-gold-500/30 hover:shadow-lg hover:shadow-gold-500/40": variant === "gold",
             "px-3 py-1.5 text-sm gap-1.5": size === "sm",
             "px-5 py-2.5 text-sm gap-2": size === "md",
             "px-8 py-3.5 text-base gap-2.5": size === "lg",

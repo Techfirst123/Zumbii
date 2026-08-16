@@ -173,8 +173,8 @@ function ImageGallery({ images }: { images: string[] }) {
             className={clsx(
               'relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200',
               selected === i
-                ? 'border-zumbii-500 ring-2 ring-zumbii-200'
-                : 'border-border hover:border-zumbii-300'
+                ? 'border-gold-500 ring-2 ring-gold-200'
+                : 'border-border hover:border-gold-300'
             )}
           >
             <Image
@@ -247,7 +247,7 @@ function RatingBreakdown({ breakdown }: { breakdown: { stars: number; count: num
       {breakdown.map((r) => (
         <div key={r.stars} className="flex items-center gap-3">
           <span className="text-xs font-medium text-text-secondary w-12 flex items-center gap-1">
-            {r.stars} <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            {r.stars} <Star className="w-3 h-3 fill-gold-500 text-gold-500" />
           </span>
           <div className="flex-1 h-2 bg-surface-tertiary rounded-full overflow-hidden">
             <motion.div
@@ -255,7 +255,7 @@ function RatingBreakdown({ breakdown }: { breakdown: { stars: number; count: num
               whileInView={{ width: `${r.percentage}%` }}
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.1 * (5 - r.stars) }}
-              className="h-full bg-amber-400 rounded-full"
+              className="h-full bg-gold-500 rounded-full"
             />
           </div>
           <span className="text-xs text-text-tertiary w-10 text-right">{r.count}</span>
@@ -811,7 +811,7 @@ export default function ProductPage() {
                 className={clsx(
                   'whitespace-nowrap px-4 py-3 sm:px-5 sm:py-4 text-sm font-medium border-b-2 transition-colors',
                   activeTab === tab.id
-                    ? 'border-zumbii-600 text-zumbii-600'
+                    ? 'border-gold-500 text-zumbii-950'
                     : 'border-transparent text-text-tertiary hover:text-text-secondary hover:border-border'
                 )}
               >

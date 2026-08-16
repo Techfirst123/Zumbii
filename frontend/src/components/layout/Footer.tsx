@@ -47,39 +47,39 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative bg-surface-secondary">
+    <footer className="relative bg-zumbii-950 text-white/70">
       {/* Newsletter section */}
-      <div className="border-b border-border">
+      <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid items-center gap-8 lg:grid-cols-2">
             <div>
-              <h3 className="text-2xl font-bold text-text-primary">
+              <h3 className="text-2xl font-bold text-white">
                 Stay in the loop
               </h3>
-              <p className="mt-2 text-text-secondary">
+              <p className="mt-2 text-white/60">
                 Get exclusive deals, new arrivals, and franchise opportunities
                 delivered to your inbox.
               </p>
             </div>
             <form onSubmit={handleSubscribe} className="flex w-full max-w-md gap-3">
               <div className="relative flex-1">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="h-12 w-full rounded-xl border border-border bg-white pl-10 pr-4 text-sm text-text-primary placeholder:text-text-tertiary focus:border-zumbii-300 focus:outline-none focus:ring-2 focus:ring-zumbii-100"
+                  className="h-12 w-full rounded-xl border border-white/20 bg-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/40 focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-400/30"
                 />
               </div>
               <button
                 type="submit"
                 className={clsx(
-                  'flex h-12 items-center gap-2 rounded-xl px-6 font-medium text-white transition-all',
+                  'flex h-12 items-center gap-2 rounded-xl px-6 font-medium transition-all',
                   subscribed
-                    ? 'bg-emerald-500'
-                    : 'bg-zumbii-600 hover:bg-zumbii-700 active:bg-zumbii-800'
+                    ? 'bg-leaf-500 text-white'
+                    : 'bg-gold-500 text-zumbii-950 hover:bg-gold-600 active:bg-gold-700'
                 )}
               >
                 {subscribed ? (
@@ -105,28 +105,28 @@ export default function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zumbii-600 text-base font-bold text-white">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-500 text-base font-bold text-zumbii-950">
                 Z
               </div>
-              <span className="text-xl font-bold text-text-primary">
+              <span className="text-xl font-bold text-white">
                 {siteConfig.name}
               </span>
             </Link>
-            <p className="mt-4 text-sm leading-relaxed text-text-secondary">
+            <p className="mt-4 text-sm leading-relaxed text-white/60">
               India&apos;s premier B2B & B2C marketplace. Empowering businesses,
               connecting communities, and growing together.
             </p>
             <div className="mt-6 space-y-3">
-              <div className="flex items-center gap-3 text-sm text-text-secondary">
-                <MapPin className="h-4 w-4 shrink-0 text-zumbii-500" />
+              <div className="flex items-center gap-3 text-sm text-white/60">
+                <MapPin className="h-4 w-4 shrink-0 text-gold-400" />
                 <span>{siteConfig.address}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-text-secondary">
-                <Phone className="h-4 w-4 shrink-0 text-zumbii-500" />
+              <div className="flex items-center gap-3 text-sm text-white/60">
+                <Phone className="h-4 w-4 shrink-0 text-gold-400" />
                 <span>{siteConfig.phone}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-text-secondary">
-                <Mail className="h-4 w-4 shrink-0 text-zumbii-500" />
+              <div className="flex items-center gap-3 text-sm text-white/60">
+                <Mail className="h-4 w-4 shrink-0 text-gold-400" />
                 <span>{siteConfig.email}</span>
               </div>
             </div>
@@ -136,7 +136,7 @@ export default function Footer() {
           {[footerLinks.company, footerLinks.quickLinks, footerLinks.customerService].map(
             (section) => (
               <div key={section.title}>
-                <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-primary">
+                <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
                   {section.title}
                 </h4>
                 <ul className="space-y-3">
@@ -144,9 +144,9 @@ export default function Footer() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="group flex items-center gap-1.5 text-sm text-text-secondary transition-colors hover:text-zumbii-600"
+                        className="group flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-white"
                       >
-                        <ChevronRight className="h-3 w-3 shrink-0 text-zumbii-400 opacity-0 transition-all group-hover:opacity-100" />
+                        <ChevronRight className="h-3 w-3 shrink-0 text-gold-400 opacity-0 transition-all group-hover:opacity-100" />
                         <span>{link.label}</span>
                       </Link>
                     </li>
@@ -158,7 +158,7 @@ export default function Footer() {
 
           {/* Connect & Download */}
           <div>
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-primary">
+            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
               Connect
             </h4>
             <div className="mb-6 flex gap-3">
@@ -168,7 +168,7 @@ export default function Footer() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-text-secondary shadow-sm transition-all hover:bg-zumbii-600 hover:text-white hover:shadow-md"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-all hover:bg-gold-500 hover:text-zumbii-950"
                     aria-label={link.label}
                   >
                     <Icon className="h-4 w-4" />
@@ -177,7 +177,7 @@ export default function Footer() {
               })}
             </div>
 
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text-primary">
+            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
               Download App
             </h4>
             <div className="flex flex-col gap-3">
@@ -207,26 +207,26 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-border">
+      <div className="border-t border-white/10">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-4 lg:flex-row lg:justify-between">
-            <div className="flex flex-wrap items-center gap-4 text-xs text-text-tertiary">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-white/50">
               <span>
                 &copy; {currentYear} {siteConfig.name}. All rights reserved.
               </span>
-              <span className="hidden text-border lg:inline">|</span>
+              <span className="hidden text-white/20 lg:inline">|</span>
               {supportLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
-                  className="transition-colors hover:text-zumbii-600"
+                  className="transition-colors hover:text-white"
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
 
-            <p className="text-center text-xs italic text-text-tertiary lg:text-right">
+            <p className="text-center text-xs italic text-white/50 lg:text-right">
               &ldquo;{siteConfig.tagline}&rdquo;
             </p>
           </div>

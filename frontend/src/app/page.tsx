@@ -11,43 +11,25 @@ import {
   Camera,
   ShoppingBag,
   Store,
-  TrendingUp,
   Shield,
   Package,
   Truck,
-  HeadphonesIcon,
-  BadgePercent,
-  Building2,
-  Users,
   Star,
   ChevronRight,
   ChevronLeft,
   ArrowRight,
-  Sparkles,
-  Clock,
-  MapPin,
-  CheckCircle,
-  Leaf,
-  Zap,
-  BarChart3,
-  HeartHandshake,
-  MessageCircle,
-  Download,
-  Apple,
-  Smartphone,
   Mail,
   Send,
   Quote,
-  ChevronUp,
   Loader2,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Container from "@/components/ui/container";
 import SectionHeader from "@/components/ui/section-header";
 import { ProductCard } from "@/components/ui/ProductCard";
+import PromoBanner from "@/components/home/PromoBanner";
 import { productsApi, categoriesApi, ApiError, type BackendCategory } from "@/lib/api";
 import { mapBackendProduct } from "@/lib/adapters";
 import { categoryVisual } from "@/lib/categoryVisuals";
@@ -101,30 +83,6 @@ const testimonials = [
   { name: "Vikram Singh", role: "Distributor, Jaipur", avatar: "VS", content: "Zumbii's logistics network is incredible. We now serve 200+ retailers across Rajasthan with next-day delivery. The platform is intuitive and reliable.", rating: 5 },
 ];
 
-const brands = [
-  { name: "Apple", logo: "A" }, { name: "Samsung", logo: "S" }, { name: "Nike", logo: "N" },
-  { name: "Adidas", logo: "Ad" }, { name: "Sony", logo: "So" }, { name: "LG", logo: "LG" },
-  { name: "Puma", logo: "P" }, { name: "Bose", logo: "B" },
-];
-
-const whyChooseZumbii = [
-  { icon: Shield, title: "Secure Transactions", description: "100% secure payments with buyer protection and escrow services for peace of mind." },
-  { icon: Truck, title: "Pan-India Delivery", description: "Fast, reliable logistics covering 29,000+ pin codes across India with real-time tracking." },
-  { icon: BadgePercent, title: "Best Prices", description: "Competitive pricing with bulk discounts, price matching, and exclusive B2B deals." },
-  { icon: Users, title: "Verified Community", description: "All sellers are thoroughly verified. Trust ratings, reviews, and transparent business profiles." },
-  { icon: HeadphonesIcon, title: "24/7 Support", description: "Dedicated account managers for businesses. AI-powered chat and phone support round the clock." },
-  { icon: BarChart3, title: "Smart Analytics", description: "Real-time sales data, customer insights, and inventory analytics to grow your business." },
-  { icon: CheckCircle, title: "Quality Guarantee", description: "Strict quality checks, easy returns, and replacement guarantee on all products." },
-  { icon: MessageCircle, title: "Direct Communication", description: "Built-in chat with buyers and sellers. Negotiate, share samples, and build relationships." },
-];
-
-const stats = [
-  { value: "50K+", label: "Products", icon: Package },
-  { value: "10K+", label: "Sellers", icon: Store },
-  { value: "500+", label: "Cities", icon: MapPin },
-  { value: "2M+", label: "Users", icon: Users },
-];
-
 function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[]; loading: boolean }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [taglineIndex, setTaglineIndex] = useState(0);
@@ -152,14 +110,14 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
     <section className="relative flex items-center overflow-hidden py-14 lg:py-0 lg:min-h-[80vh]">
       <div
         className="absolute inset-0"
-        style={{ background: "linear-gradient(122deg, #1E2A78 6%, #4A2FA0 46%, #7C3FD1 92%)" }}
+        style={{ background: "linear-gradient(122deg, #0a0e2e 6%, #1c2a63 46%, #26377f 92%)" }}
       />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,255,255,0.12),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(124,58,237,0.15),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(227,169,0,0.15),transparent_50%)]" />
 
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-zumbii-400/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-zumbii-500/5 via-purple-500/5 to-zumbii-500/5 rounded-full blur-[150px]" />
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gold-500/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-brand-red-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-zumbii-500/5 via-gold-500/5 to-zumbii-500/5 rounded-full blur-[150px]" />
 
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-10 left-10 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_2px_rgba(255,255,255,0.8)]" />
@@ -182,7 +140,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
 
             <motion.h1 variants={fadeInUp} className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.15] tracking-tight">
               Empowering Businesses,{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD9C8] to-[#FFB199] inline-block">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200 inline-block">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={taglineIndex}
@@ -205,7 +163,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
 
             <motion.div variants={fadeInUp} className="mt-5 lg:mt-8 flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start">
               <Link href="/marketplace">
-                <Button variant="white" size="lg" className="shadow-2xl shadow-white/25 hover:shadow-white/40">
+                <Button variant="gold" size="lg" className="shadow-2xl shadow-gold-500/25 hover:shadow-gold-500/40">
                   <ShoppingBag className="w-5 h-5" />
                   Start Shopping
                 </Button>
@@ -220,7 +178,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
 
             <motion.form variants={fadeInUp} onSubmit={handleSearchSubmit} className="mt-6 lg:mt-10 max-w-xl mx-auto lg:mx-0">
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-zumbii-400 via-purple-400 to-zumbii-400 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-all duration-500" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-zumbii-400 via-gold-400 to-zumbii-400 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-all duration-500" />
                 <div className="relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 focus-within:bg-white/20 focus-within:border-white/40">
                   <Search className="ml-3 sm:ml-4 w-5 h-5 text-white/50 shrink-0" />
                   <input
@@ -237,7 +195,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
                     <button type="button" className="hidden sm:flex p-2 hover:bg-white/10 rounded-lg transition-colors" aria-label="Image search">
                       <Camera className="w-4 h-4 text-white/50" />
                     </button>
-                    <button type="submit" className="ml-1 bg-gradient-to-r from-zumbii-500 to-purple-600 text-white px-3.5 sm:px-5 py-2 rounded-xl text-sm font-medium hover:from-zumbii-600 hover:to-purple-700 transition-all shadow-lg shrink-0">
+                    <button type="submit" className="ml-1 bg-gold-500 text-zumbii-950 px-3.5 sm:px-5 py-2 rounded-xl text-sm font-semibold hover:bg-gold-600 transition-all shadow-lg shrink-0">
                       Search
                     </button>
                   </div>
@@ -277,9 +235,9 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
             className="hidden lg:block relative"
           >
             <div className="relative aspect-square max-w-lg mx-auto">
-              <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-purple-400/30 to-zumbii-400/30 rounded-[40px] blur-2xl" />
+              <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-gold-400/30 to-zumbii-400/30 rounded-[40px] blur-2xl" />
 
-              <div className="absolute top-[6%] left-[2%] z-20 inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-[#14112B]/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30">
+              <div className="absolute top-[6%] left-[2%] z-20 inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-zumbii-950/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
@@ -321,7 +279,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     {discount > 0 && (
-                      <span className="absolute -top-2 -right-2 rotate-[8deg] px-2.5 py-1.5 rounded-[4px_12px_12px_4px] bg-[#FF6B45] text-white text-xs font-extrabold shadow-lg shadow-[#FF6B45]/40 leading-none">
+                      <span className="absolute -top-2 -right-2 rotate-[8deg] px-2.5 py-1.5 rounded-[4px_12px_12px_4px] bg-brand-red-600 text-white text-xs font-extrabold shadow-lg shadow-brand-red-600/40 leading-none">
                         {discount}%<br />OFF
                       </span>
                     )}
@@ -334,7 +292,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
               })}
 
               <div className="absolute bottom-[2%] right-[4%] z-20 flex items-center gap-1 text-white/65 text-[11px]">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> 4.8 avg rating
+                <Star className="w-3 h-3 fill-gold-500 text-gold-500" /> 4.8 avg rating
               </div>
             </div>
           </motion.div>
@@ -354,46 +312,10 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
   );
 }
 
-function StatsCounter() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  const [counted, setCounted] = useState(false);
-
-  useEffect(() => {
-    if (isInView && !counted) setCounted(true);
-  }, [isInView, counted]);
-
-  return (
-    <section ref={ref} className="py-10 lg:py-14">
-      <Container>
-        <div className="bg-surface-secondary rounded-3xl shadow-sm border border-border py-8 px-6 sm:py-10 sm:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                viewport={{ once: true }}
-                className="flex flex-col items-center text-center gap-2"
-              >
-                <stat.icon className="w-6 h-6 text-zumbii-500" />
-                <span className="text-3xl sm:text-4xl font-bold text-text-primary">
-                  {stat.value}
-                </span>
-                <span className="text-sm text-text-tertiary">{stat.label}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
 function ProductGridSection({
   title,
   subtitle,
+  eyebrow,
   products,
   loading,
   viewAllHref,
@@ -403,6 +325,7 @@ function ProductGridSection({
 }: {
   title: string;
   subtitle: string;
+  eyebrow?: string;
   products: Product[];
   loading: boolean;
   viewAllHref: string;
@@ -416,7 +339,7 @@ function ProductGridSection({
     <section className={`py-20 lg:py-28 ${bgClass}`}>
       <Container>
         <FadeInSection>
-          <SectionHeader title={title} subtitle={subtitle} />
+          <SectionHeader title={title} subtitle={subtitle} eyebrow={eyebrow} />
         </FadeInSection>
         {loading ? (
           <div className="mt-12 flex justify-center py-12 text-text-tertiary">
@@ -451,20 +374,6 @@ function ProductGridSection({
   );
 }
 
-function FeaturedProductsSection({ products, loading }: { products: Product[]; loading: boolean }) {
-  return (
-    <ProductGridSection
-      title="Featured Products"
-      subtitle="Handpicked premium products from our verified sellers"
-      products={products}
-      loading={loading}
-      viewAllHref="/marketplace"
-      viewAllLabel="View All Products"
-      columns={3}
-    />
-  );
-}
-
 function CategoriesSection() {
   const [categories, setCategories] = useState<BackendCategory[]>([]);
 
@@ -488,6 +397,7 @@ function CategoriesSection() {
       <Container>
         <FadeInSection>
           <SectionHeader
+            eyebrow="Categories"
             title="Shop by Category"
             subtitle="Explore thousands of products across diverse categories"
           />
@@ -526,17 +436,17 @@ function CategoriesSection() {
   );
 }
 
-function DealsSection({ products, loading }: { products: Product[]; loading: boolean }) {
+function BestSellersSection({ products, loading }: { products: Product[]; loading: boolean }) {
   return (
     <ProductGridSection
-      title="Today's Deals"
-      subtitle="Biggest discounts across the marketplace right now"
+      eyebrow="Handpicked For You"
+      title="Bestsellers"
+      subtitle="Highest-selling products across the marketplace"
       products={products}
       loading={loading}
       viewAllHref="/marketplace"
-      viewAllLabel="Shop All Deals"
+      viewAllLabel="Explore Best Sellers"
       columns={4}
-      bgClass="bg-surface-secondary"
     />
   );
 }
@@ -544,6 +454,7 @@ function DealsSection({ products, loading }: { products: Product[]; loading: boo
 function NewArrivalsSection({ products, loading }: { products: Product[]; loading: boolean }) {
   return (
     <ProductGridSection
+      eyebrow="Just In"
       title="New Arrivals"
       subtitle="Freshly added products from our sellers"
       products={products}
@@ -551,118 +462,8 @@ function NewArrivalsSection({ products, loading }: { products: Product[]; loadin
       viewAllHref="/marketplace"
       viewAllLabel="See What's New"
       columns={4}
-    />
-  );
-}
-
-function ComboProductsSection({ products, loading }: { products: Product[]; loading: boolean }) {
-  return (
-    <ProductGridSection
-      title="Combo Deals"
-      subtitle="Bundle up and save more with handpicked product combos"
-      products={products}
-      loading={loading}
-      viewAllHref="/marketplace"
-      viewAllLabel="Explore Combo Deals"
-      columns={4}
-    />
-  );
-}
-
-function SeasonalDealsSection({ products, loading }: { products: Product[]; loading: boolean }) {
-  return (
-    <ProductGridSection
-      title="Seasonal Deals"
-      subtitle="Limited-time picks curated for the season"
-      products={products}
-      loading={loading}
-      viewAllHref="/marketplace"
-      viewAllLabel="Shop Seasonal Deals"
-      columns={4}
       bgClass="bg-surface-secondary"
     />
-  );
-}
-
-function BestSellersSection({ products, loading }: { products: Product[]; loading: boolean }) {
-  return (
-    <ProductGridSection
-      title="Best Sellers"
-      subtitle="Highest-selling products across the marketplace"
-      products={products}
-      loading={loading}
-      viewAllHref="/marketplace"
-      viewAllLabel="Explore Best Sellers"
-      columns={4}
-      bgClass="bg-surface-secondary"
-    />
-  );
-}
-
-function BrandsStrip() {
-  return (
-    <section className="py-16 bg-white border-y border-zumbii-100">
-      <Container>
-        <FadeInSection>
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-text-tertiary mb-8">
-            Trusted by leading brands
-          </p>
-        </FadeInSection>
-        <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 lg:gap-16">
-          {brands.map((brand) => (
-            <motion.div
-              key={brand.name}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              viewport={{ once: true }}
-              className="group cursor-pointer"
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-surface-secondary flex items-center justify-center group-hover:bg-zumbii-50 transition-colors border border-zumbii-100">
-                <span className="text-lg sm:text-xl font-bold text-text-tertiary group-hover:text-zumbii-600 transition-colors">
-                  {brand.logo}
-                </span>
-              </div>
-              <p className="text-center text-xs text-text-tertiary mt-2 group-hover:text-zumbii-500 transition-colors">{brand.name}</p>
-            </motion.div>
-          ))}
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-function WhyChooseZumbiiSection() {
-  return (
-    <section className="py-20 lg:py-28 bg-surface-secondary">
-      <Container>
-        <FadeInSection>
-          <SectionHeader
-            title="Why Choose Zumbii?"
-            subtitle="Built for businesses, designed for growth"
-          />
-        </FadeInSection>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={staggerContainer}
-          className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {whyChooseZumbii.map((item) => (
-            <motion.div key={item.title} variants={fadeInUp}>
-              <Card className="p-6 text-center h-full">
-                <div className="w-12 h-12 mx-auto rounded-xl bg-zumbii-50 flex items-center justify-center mb-4">
-                  <item.icon className="w-6 h-6 text-zumbii-600" />
-                </div>
-                <h3 className="font-semibold text-text-primary text-sm sm:text-base mb-2">{item.title}</h3>
-                <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">{item.description}</p>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </Container>
-    </section>
   );
 }
 
@@ -691,6 +492,7 @@ function TestimonialsSection() {
       <Container>
         <FadeInSection>
           <SectionHeader
+            eyebrow="Testimonials"
             title="What Our Community Says"
             subtitle="Real stories from real users across India"
           />
@@ -708,13 +510,13 @@ function TestimonialsSection() {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className="bg-white rounded-3xl p-8 sm:p-12 shadow-xl border border-zumbii-100"
               >
-                <Quote className="w-10 h-10 text-zumbii-200 mb-4" />
+                <Quote className="w-10 h-10 text-gold-300 mb-4" />
                 <p className="text-lg sm:text-xl text-text-primary leading-relaxed">
                   &ldquo;{testimonials[current].content}&rdquo;
                 </p>
                 <div className="mt-6 flex items-center gap-1">
                   {Array.from({ length: testimonials[current].rating }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <Star key={i} className="w-4 h-4 fill-gold-500 text-gold-500" />
                   ))}
                 </div>
                 <div className="mt-6 flex items-center gap-4">
@@ -742,7 +544,7 @@ function TestimonialsSection() {
                 <button
                   key={i}
                   onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${i === current ? "bg-zumbii-600 w-6" : "bg-zumbii-200"}`}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${i === current ? "bg-gold-500 w-6" : "bg-zumbii-200"}`}
                   aria-label={`Go to testimonial ${i + 1}`}
                 />
               ))}
@@ -755,84 +557,6 @@ function TestimonialsSection() {
               <ChevronRight className="w-4 h-4 text-text-secondary" />
             </button>
           </div>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-function DownloadAppSection() {
-  return (
-    <section className="py-20 lg:py-28 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-zumbii-600 via-zumbii-700 to-zumbii-900" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.1),transparent_50%)]" />
-      <Container className="relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <FadeInSection>
-            <Badge variant="new" className="mb-4">Mobile App</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight">
-              Your Business in Your Pocket
-            </h2>
-            <p className="mt-4 text-lg text-white/70 leading-relaxed">
-              Manage orders, chat with suppliers, track deliveries, and grow your business on the go with the Zumbii mobile app.
-            </p>
-            <ul className="mt-6 space-y-3">
-              {[
-                "Real-time order tracking & notifications",
-                "Instant chat with buyers & sellers",
-                "AI-powered product recommendations",
-                "Barcode scanning & quick reorder",
-                "Offline catalog browsing",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3 text-white/80 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <button className="inline-flex items-center gap-3 bg-black text-white px-6 py-3 rounded-2xl hover:bg-black/80 transition-colors shadow-xl">
-                <Apple className="w-7 h-7" />
-                <div className="text-left">
-                  <div className="text-[10px] text-white/60">Download on the</div>
-                  <div className="text-sm font-semibold -mt-0.5">App Store</div>
-                </div>
-              </button>
-              <button className="inline-flex items-center gap-3 bg-black text-white px-6 py-3 rounded-2xl hover:bg-black/80 transition-colors shadow-xl">
-                <Smartphone className="w-7 h-7" />
-                <div className="text-left">
-                  <div className="text-[10px] text-white/60">Get it on</div>
-                  <div className="text-sm font-semibold -mt-0.5">Google Play</div>
-                </div>
-              </button>
-            </div>
-          </FadeInSection>
-          <FadeInSection className="hidden lg:flex justify-center">
-            <div className="relative">
-              <div className="w-64 h-[28rem] bg-white/5 rounded-[2.5rem] border-4 border-white/10 shadow-2xl overflow-hidden">
-                <div className="h-6 bg-white/10 flex items-center justify-center">
-                  <div className="w-20 h-1.5 rounded-full bg-white/20" />
-                </div>
-                <div className="p-4 space-y-3">
-                  <div className="h-4 w-3/4 bg-white/10 rounded-lg" />
-                  <div className="h-4 w-1/2 bg-white/10 rounded-lg" />
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-white/10" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 w-full bg-white/10 rounded" />
-                        <div className="h-3 w-2/3 bg-white/10 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-full h-full border-2 border-white/10 rounded-[2.5rem] -z-10" />
-              <div className="absolute -top-2 -right-2 w-12 h-12 rounded-full bg-zumbii-400 flex items-center justify-center shadow-lg">
-                <Download className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </FadeInSection>
         </div>
       </Container>
     </section>
@@ -869,7 +593,7 @@ function NewsletterSection() {
                   icon={<Mail className="w-4 h-4" />}
                 />
               </div>
-              <Button type="submit" size="lg" className="h-12 shrink-0">
+              <Button type="submit" variant="gold" size="lg" className="h-12 shrink-0">
                 Subscribe <Send className="w-4 h-4" />
               </Button>
             </form>
@@ -888,9 +612,6 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
-  const [deals, setDeals] = useState<Product[]>([]);
-  const [comboProducts, setComboProducts] = useState<Product[]>([]);
-  const [seasonalProducts, setSeasonalProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -905,35 +626,9 @@ export default function HomePage() {
         ]);
         if (cancelled) return;
 
-        const featuredProducts = featuredRes.map(mapBackendProduct);
-        const newArrivalProducts = newArrivalsRes.data.map(mapBackendProduct);
-        const bestSellerProducts = bestSellersRes.data.map(mapBackendProduct);
-
-        const pool = new Map<string, Product>();
-        [...featuredProducts, ...newArrivalProducts, ...bestSellerProducts].forEach((p) =>
-          pool.set(p.id, p)
-        );
-        const discountRate = (p: Product) =>
-          p.comparePrice ? (p.comparePrice - p.price) / p.comparePrice : 0;
-        const dealProducts = Array.from(pool.values())
-          .filter((p) => discountRate(p) > 0)
-          .sort((a, b) => discountRate(b) - discountRate(a))
-          .slice(0, 8);
-        const hasTag = (p: Product, tag: string) =>
-          p.tags.some((t) => t.toLowerCase().includes(tag));
-        const comboDeals = Array.from(pool.values())
-          .filter((p) => hasTag(p, "combo"))
-          .slice(0, 8);
-        const seasonalDeals = Array.from(pool.values())
-          .filter((p) => hasTag(p, "seasonal"))
-          .slice(0, 8);
-
-        setFeatured(featuredProducts);
-        setNewArrivals(newArrivalProducts);
-        setBestSellers(bestSellerProducts);
-        setDeals(dealProducts);
-        setComboProducts(comboDeals);
-        setSeasonalProducts(seasonalDeals);
+        setFeatured(featuredRes.map(mapBackendProduct));
+        setNewArrivals(newArrivalsRes.data.map(mapBackendProduct));
+        setBestSellers(bestSellersRes.data.map(mapBackendProduct));
       } catch (err) {
         if (!cancelled) console.error(err instanceof ApiError ? err.message : err);
       } finally {
@@ -950,18 +645,11 @@ export default function HomePage() {
   return (
     <>
       <HeroSection featuredProducts={featured} loading={loading} />
-      <FeaturedProductsSection products={featured} loading={loading} />
       <CategoriesSection />
-      <StatsCounter />
-      <DealsSection products={deals} loading={loading} />
-      <ComboProductsSection products={comboProducts} loading={loading} />
-      <SeasonalDealsSection products={seasonalProducts} loading={loading} />
-      <NewArrivalsSection products={newArrivals} loading={loading} />
       <BestSellersSection products={bestSellers} loading={loading} />
-      <BrandsStrip />
-      <WhyChooseZumbiiSection />
+      <PromoBanner />
+      <NewArrivalsSection products={newArrivals} loading={loading} />
       <TestimonialsSection />
-      <DownloadAppSection />
       <NewsletterSection />
     </>
   );

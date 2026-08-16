@@ -3,12 +3,13 @@ import { clsx } from "clsx";
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;
+  eyebrow?: string;
   align?: "left" | "center";
   light?: boolean;
   className?: string;
 }
 
-export default function SectionHeader({ title, subtitle, align = "center", light = false, className }: SectionHeaderProps) {
+export default function SectionHeader({ title, subtitle, eyebrow, align = "center", light = false, className }: SectionHeaderProps) {
   return (
     <div
       className={clsx(
@@ -17,6 +18,16 @@ export default function SectionHeader({ title, subtitle, align = "center", light
         className
       )}
     >
+      {eyebrow && (
+        <p
+          className={clsx(
+            "text-xs sm:text-sm font-bold uppercase tracking-widest mb-2",
+            light ? "text-gold-400" : "text-brand-red-600"
+          )}
+        >
+          {eyebrow}
+        </p>
+      )}
       <h2
         className={clsx(
           "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight",

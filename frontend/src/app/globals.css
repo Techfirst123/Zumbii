@@ -1,20 +1,53 @@
 @import "tailwindcss";
 
 @theme {
-  --color-zumbii-50: #f0f7ff;
-  --color-zumbii-100: #e0effe;
-  --color-zumbii-200: #b9dffd;
-  --color-zumbii-300: #7cc5fc;
-  --color-zumbii-400: #36a8f9;
-  --color-zumbii-500: #0c8eea;
-  --color-zumbii-600: #0070c8;
-  --color-zumbii-700: #0159a2;
-  --color-zumbii-800: #091724;
-  --color-zumbii-900: #0b3f6f;
-  --color-zumbii-950: #07284a;
+  --color-zumbii-50: #f4f5fa;
+  --color-zumbii-100: #e7e9f3;
+  --color-zumbii-200: #c3c8e4;
+  --color-zumbii-300: #949dd1;
+  --color-zumbii-400: #5c6bbc;
+  --color-zumbii-500: #3b499b;
+  --color-zumbii-600: #313f8c;
+  --color-zumbii-700: #26377f;
+  --color-zumbii-800: #1c2a63;
+  --color-zumbii-900: #101a45;
+  --color-zumbii-950: #0a0e2e;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fff6cc;
+  --color-gold-200: #ffeda3;
+  --color-gold-300: #ffe270;
+  --color-gold-400: #ffd633;
+  --color-gold-500: #ffd400;
+  --color-gold-600: #e3a900;
+  --color-gold-700: #c29b00;
+  --color-gold-800: #997a00;
+  --color-gold-900: #705a00;
+
+  --color-brand-red-50: #fdf2f3;
+  --color-brand-red-100: #fae0e2;
+  --color-brand-red-200: #f4b8bc;
+  --color-brand-red-300: #ee8e94;
+  --color-brand-red-400: #eb5c63;
+  --color-brand-red-500: #e8383f;
+  --color-brand-red-600: #e31c25;
+  --color-brand-red-700: #c0141c;
+  --color-brand-red-800: #990f16;
+  --color-brand-red-900: #730b10;
+
+  --color-cream-50: #faf6ee;
+  --color-cream-100: #f3efe3;
+  --color-cream-200: #e8e0cc;
+  --color-cream-300: #ddd0ab;
+
+  --color-leaf-50: #f0faf2;
+  --color-leaf-100: #dff6e4;
+  --color-leaf-500: #23953b;
+  --color-leaf-600: #1a7a2e;
+  --color-leaf-700: #146725;
 
   --color-surface: #ffffff;
-  --color-surface-secondary: #f8fafc;
+  --color-surface-secondary: #faf6ee;
   --color-surface-tertiary: #f1f5f9;
   --color-border: #e2e8f0;
   --color-border-light: #f1f5f9;
@@ -22,7 +55,7 @@
   --color-text-secondary: #475569;
   --color-text-tertiary: #94a3b8;
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-poppins), 'Inter', system-ui, -apple-system, sans-serif;
 
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -69,7 +102,7 @@ body {
 }
 
 @utility gradient-bg {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 25%, #0c8eea 50%, #7c3aed 75%, #0f172a 100%);
+  background: linear-gradient(135deg, #0a0e2e 0%, #1c2a63 25%, #e3a900 50%, #c0141c 75%, #0a0e2e 100%);
   background-size: 400% 400%;
   animation: gradient-shift 15s ease infinite;
 }
