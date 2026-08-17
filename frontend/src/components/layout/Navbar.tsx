@@ -108,15 +108,11 @@ export default function Navbar() {
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Logo */}
+          {/* Logo — always on a light pill: the mark itself is dark (navy/black), so it
+              needs a light backdrop whether the nav is floating over the hero or scrolled solid. */}
           <Link
             href="/"
-            className={clsx(
-              'flex h-10 shrink-0 items-center rounded-xl px-2 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md lg:h-12',
-              scrolled
-                ? 'bg-white/85 shadow-black/5'
-                : 'bg-black/30 shadow-black/10'
-            )}
+            className="flex h-10 shrink-0 items-center rounded-xl bg-white/90 px-2 shadow-sm shadow-black/10 backdrop-blur-sm transition-shadow hover:shadow-md lg:h-12"
             aria-label={`${siteConfig.name} home`}
           >
             <NextImage
