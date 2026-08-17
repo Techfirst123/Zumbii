@@ -12,6 +12,7 @@ import {
   type BackendCategory,
 } from "@/lib/api";
 import { ImagePlus, Loader2, X, AlertCircle } from "lucide-react";
+import { slugify } from "@/lib/slugify";
 
 interface ProductFormModalProps {
   open: boolean;
@@ -19,14 +20,6 @@ interface ProductFormModalProps {
   categories: BackendCategory[];
   product?: BackendProduct | null;
   onSaved: (product: BackendProduct) => void;
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 const emptyForm = {

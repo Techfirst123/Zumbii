@@ -11,6 +11,7 @@ import {
   Package,
   AlertCircle,
   Loader2,
+  Upload,
 } from "lucide-react";
 import {
   productsApi,
@@ -21,6 +22,7 @@ import {
   type BackendCategory,
 } from "@/lib/api";
 import { ProductFormModal } from "@/components/admin/ProductFormModal";
+import { BulkUploadModal } from "@/components/admin/BulkUploadModal";
 
 function stockStatus(quantity: number) {
   if (quantity === 0) return { label: "Out of Stock", className: "bg-red-100 text-red-700" };
@@ -38,6 +40,7 @@ export default function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<BackendProduct | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -93,16 +96,25 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-sm text-gray-500 mt-1">Manage your product catalog</p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-zumbii-500 rounded-lg hover:bg-zumbii-600 transition-colors"
-        >
-          <Plus size={16} />
-          Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setBulkModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-zumbii-700 bg-white border border-zumbii-200 rounded-lg hover:bg-zumbii-50 transition-colors"
+          >
+            <Upload size={16} />
+            Bulk Upload
+          </button>
+          <button
+            onClick={() => {
+              setEditing(null);
+              setModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-zumbii-500 rounded-lg hover:bg-zumbii-600 transition-colors"
+          >
+            <Plus size={16} />
+            Add Product
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -268,6 +280,13 @@ export default function ProductsPage() {
         categories={categories}
         product={editing}
         onSaved={handleSaved}
+      />
+
+      <BulkUploadModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        categories={categories}
+        onImported={loadData}
       />
     </div>
   );

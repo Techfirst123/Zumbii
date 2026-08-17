@@ -247,6 +247,15 @@ export const categoriesApi = {
   remove: (id: string) => api.delete<{ message: string }>(`/categories/${id}`),
 };
 
+export interface BulkCreateResult {
+  created: number;
+  failed: number;
+  results: Array<
+    | { index: number; success: true; product: BackendProduct }
+    | { index: number; success: false; error: string }
+  >;
+}
+
 export const productsApi = {
   list: (query: ProductQuery = {}) =>
     api.get<ProductListResponse>(`/products${toQueryString(query)}`, { auth: false }),
@@ -257,6 +266,8 @@ export const productsApi = {
     api.get<BackendProduct[]>(`/products/${id}/related`, { auth: false }),
   create: (payload: Record<string, unknown>) =>
     api.post<BackendProduct>('/products', payload),
+  bulkCreate: (items: Record<string, unknown>[]) =>
+    api.post<BulkCreateResult>('/products/bulk', { items }),
   update: (id: string, payload: Record<string, unknown>) =>
     api.put<BackendProduct>(`/products/${id}`, payload),
   remove: (id: string) => api.delete<{ message: string }>(`/products/${id}`),

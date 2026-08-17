@@ -44,6 +44,32 @@ export class ProductsService {
     });
   }
 
+  async bulkCreate(dtos: CreateProductDto[]) {
+    const results: Array<
+      | { index: number; success: true; product: Awaited<ReturnType<ProductsService['create']>> }
+      | { index: number; success: false; error: string }
+    > = [];
+
+    for (let i = 0; i < dtos.length; i++) {
+      try {
+        const product = await this.create(dtos[i]);
+        results.push({ index: i, success: true, product });
+      } catch (err) {
+        results.push({
+          index: i,
+          success: false,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      created: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
+      results,
+    };
+  }
+
   async findAll(query: QueryProductDto) {
     const {
       search,

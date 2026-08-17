@@ -15,6 +15,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { BulkCreateProductDto } from './dto/bulk-create-product.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -32,6 +33,15 @@ export class ProductsController {
   @ApiOperation({ summary: 'Create a new product' })
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
+  }
+
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.SELLER)
+  @Post('bulk')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk create products (e.g. from a spreadsheet import)' })
+  bulkCreate(@Body() dto: BulkCreateProductDto) {
+    return this.productsService.bulkCreate(dto.items);
   }
 
   @Public()
