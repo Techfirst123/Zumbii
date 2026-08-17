@@ -122,8 +122,8 @@ export default function Navbar() {
             <NextImage
               src="/images/zumbii-logo-header-wide.png"
               alt={`${siteConfig.name} logo`}
-              width={256}
-              height={66}
+              width={846}
+              height={212}
               priority
               className="h-8 w-[136px] object-contain lg:h-9 lg:w-[154px]"
             />
