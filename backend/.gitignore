@@ -1,0 +1,4 @@
+.vercel
+api/index.js
+
+.env*

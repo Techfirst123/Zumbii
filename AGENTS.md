@@ -2,22 +2,23 @@
 
 ## Project Structure
 
-The backend now lives in a separate repo: https://github.com/Techfirst123/Zumbii-admin
-(extracted from this repo's former `backend/` folder via `git subtree split`).
-This repo (`Zumbii`) contains the frontend only, deployed to Vercel.
+Frontend and backend live together in this repo and deploy as a single
+Vercel project (see `vercel.json` — frontend via `@vercel/next`, backend
+via `@vercel/node` at `backend/api/handler.js`, routed under `/api/*`).
 
 ```
 Zumbii/
 ├── frontend/          # Next.js 15 app (React 19, Tailwind v4, Framer Motion)
+├── backend/            # NestJS API (Prisma, PostgreSQL)
 ├── docker-compose.yml # PostgreSQL, MongoDB, Redis, Elasticsearch, Kibana
-├── vercel.json        # Frontend-only build/routes
+├── vercel.json         # Combined frontend + backend build/routes
 ├── AGENTS.md          # This file
 └── .gitignore
 ```
 
-The frontend talks to the backend over HTTP via `NEXT_PUBLIC_API_URL`
-(see `frontend/src/lib/api.ts`) — set this to the backend's deployed URL,
-not a same-origin path.
+The frontend talks to the backend via `NEXT_PUBLIC_API_URL`
+(see `frontend/src/lib/api.ts`) — same-origin deployments should set
+this to a relative path like `/api/v1`.
 
 ## Commands
 
@@ -27,8 +28,11 @@ not a same-origin path.
 - `cd frontend && npm run lint` – ESLint check
 
 ### Backend
-See https://github.com/Techfirst123/Zumbii-admin for backend commands
-(NestJS, Prisma, Redis, Elasticsearch). Backend changes are committed there directly.
+- `cd backend && npm run start:dev` – Start NestJS in watch mode (port 4000)
+- `cd backend && npm run build` – Compile TypeScript
+- `cd backend && npx prisma generate` – Regenerate Prisma client after schema changes
+- `cd backend && npx prisma db push` – Push schema to database (dev only)
+- `cd backend && npx prisma studio` – Open Prisma Studio (GUI database browser)
 
 ### Infrastructure
 - `docker-compose up -d` – Start all services (PostgreSQL, MongoDB, Redis, Elasticsearch, Kibana)
