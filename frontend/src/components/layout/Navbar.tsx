@@ -29,7 +29,7 @@ import { useCartStore } from '@/store/cartStore';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -38,10 +38,16 @@ export default function Navbar() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Only the homepage has a dark hero for the nav to float over transparently —
+  // every other page shows the solid nav immediately, or white text/icons end up
+  // rendering on a light background and become unreadable.
+  const isHome = pathname === '/';
+  const scrolled = isScrolled || !isHome;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
