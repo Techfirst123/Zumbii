@@ -92,8 +92,8 @@ export default function Navbar() {
             : 'bg-white/0'
         )}
       >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4 lg:h-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between gap-3 lg:h-20">
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -134,7 +134,7 @@ export default function Navbar() {
                     <Link
                       href={link.href}
                       className={clsx(
-                        'flex items-center gap-1 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                        'flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors',
                         scrolled
                           ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                           : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -151,7 +151,7 @@ export default function Navbar() {
                   <Link
                     href={link.href}
                     className={clsx(
-                      'rounded-xl px-3.5 py-2 text-sm font-medium transition-colors',
+                      'rounded-xl px-2.5 py-2 text-sm font-medium transition-colors',
                       scrolled
                         ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                         : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -165,12 +165,12 @@ export default function Navbar() {
           </nav>
 
           {/* Right section */}
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-1.5 lg:gap-2">
             {/* Desktop search toggle */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className={clsx(
-                'hidden items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-all lg:flex lg:w-56 xl:w-72',
+                'hidden items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-all xl:flex xl:w-56',
                 scrolled
                   ? 'border-border bg-surface-secondary text-text-tertiary hover:border-zumbii-200 hover:text-text-secondary'
                   : 'border-white/20 bg-white/10 text-white/60 hover:border-white/40 hover:text-white'
@@ -192,7 +192,7 @@ export default function Navbar() {
             <Link
               href="/sell"
               className={clsx(
-                'hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:flex',
+                'hidden items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors xl:flex',
                 scrolled
                   ? 'text-zumbii-600 hover:bg-zumbii-50'
                   : 'text-zumbii-300 hover:bg-white/10 hover:text-zumbii-200'
@@ -205,7 +205,7 @@ export default function Navbar() {
             <Link
               href="/franchise"
               className={clsx(
-                'hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors lg:flex',
+                'hidden items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-colors xl:flex',
                 scrolled
                   ? 'text-zumbii-600 hover:bg-zumbii-50'
                   : 'text-zumbii-300 hover:bg-white/10 hover:text-zumbii-200'
@@ -218,7 +218,7 @@ export default function Navbar() {
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className={clsx(
-                'flex items-center justify-center rounded-xl p-2 transition-colors lg:hidden',
+                'flex items-center justify-center rounded-xl p-2 transition-colors xl:hidden',
                 scrolled
                   ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                   : 'text-white/75 hover:bg-white/10 hover:text-white'
