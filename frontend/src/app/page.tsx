@@ -107,7 +107,10 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
   }
 
   return (
-    <section className="relative flex items-center overflow-hidden py-14 lg:py-0 lg:min-h-[80vh]">
+    <section
+      className="relative flex items-center overflow-hidden"
+      style={{ paddingBlock: "clamp(48px, 8vw, 96px)" }}
+    >
       <div
         className="absolute inset-0"
         style={{ background: "linear-gradient(122deg, #0a0e2e 6%, #1c2a63 46%, #26377f 92%)" }}
@@ -127,9 +130,9 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
         <div className="absolute bottom-10 right-10 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_2px_rgba(255,255,255,0.8)]" />
       </div>
 
-      <Container className="relative z-10 py-6 lg:py-24">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-          <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="text-center lg:text-left">
+      <Container className="relative z-10">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-center">
+          <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="lg:flex-1 text-center lg:text-left">
             <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-1 sm:px-5 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4 lg:mb-6 shadow-lg shadow-white/5">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -232,9 +235,12 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="hidden lg:block relative"
+            className="hidden lg:flex relative lg:flex-1 items-center justify-center"
           >
-            <div className="relative aspect-square max-w-lg mx-auto">
+            <div
+              className="relative aspect-square mx-auto"
+              style={{ height: "clamp(280px, 34vw, 440px)" }}
+            >
               <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-gold-400/30 to-zumbii-400/30 rounded-[40px] blur-2xl" />
 
               <div className="absolute top-[6%] left-[2%] z-20 inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-zumbii-950/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30">
