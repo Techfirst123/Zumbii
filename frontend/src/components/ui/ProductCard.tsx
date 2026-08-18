@@ -158,15 +158,29 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
           </span>
         </div>
 
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-base font-bold text-text-primary">
-            ₹{product.price.toLocaleString('en-IN')}
-          </span>
-          {product.comparePrice && product.comparePrice > product.price && (
-            <span className="text-xs text-text-tertiary line-through">
-              ₹{product.comparePrice.toLocaleString('en-IN')}
+        <div className="flex items-baseline justify-between gap-1.5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-base font-bold text-text-primary">
+              ₹{product.price.toLocaleString('en-IN')}
             </span>
-          )}
+            {product.comparePrice && product.comparePrice > product.price && (
+              <span className="text-xs text-text-tertiary line-through">
+                ₹{product.comparePrice.toLocaleString('en-IN')}
+              </span>
+            )}
+          </div>
+          <span
+            className={clsx(
+              'shrink-0 text-[11px] font-medium',
+              product.stock === 0
+                ? 'text-red-500'
+                : product.stock <= 10
+                  ? 'text-amber-600'
+                  : 'text-text-tertiary'
+            )}
+          >
+            {product.stock === 0 ? 'Out of stock' : `${product.stock} in stock`}
+          </span>
         </div>
 
         {product.wholesalePrice && (
@@ -175,22 +189,14 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
           </p>
         )}
 
-        <div className="flex items-center justify-between pt-1">
-          {product.moq > 0 && (
+        {product.moq > 0 && (
+          <div className="flex items-center pt-1">
             <span className="text-[11px] text-text-tertiary flex items-center gap-1">
               <Package className="w-3 h-3" />
               MOQ: {product.moq}
             </span>
-          )}
-          {product.stock > 0 && product.stock <= 10 && (
-            <span className="text-[11px] text-amber-600 font-medium">
-              Only {product.stock} left
-            </span>
-          )}
-          {product.stock === 0 && (
-            <span className="text-[11px] text-red-500 font-medium">Out of stock</span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
