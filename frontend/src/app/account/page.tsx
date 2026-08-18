@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -51,6 +52,7 @@ import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
+import { useAuthStore } from '@/store/authStore';
 
 interface UserProfile {
   name: string;
@@ -128,6 +130,8 @@ const recentActivities = [
 type Tab = 'profile' | 'addresses' | 'payments' | 'settings';
 
 function AccountPage() {
+  const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: profile.name, email: profile.email, phone: profile.phone });
@@ -640,7 +644,13 @@ function AccountPage() {
                 Wishlist
               </Link>
               <hr className="border-border my-2" />
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all">
+              <button
+                onClick={() => {
+                  logout();
+                  router.push('/login');
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
+              >
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>

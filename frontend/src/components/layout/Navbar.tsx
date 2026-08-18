@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import NextImage from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,9 +26,12 @@ import clsx from 'clsx';
 import MegaMenu from './MegaMenu';
 import { siteConfig, navLinks } from '@/lib/constants';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuthStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -350,7 +353,11 @@ export default function Navbar() {
                       <hr className="my-1 border-border" />
                       <button
                         className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
-                        onClick={() => setUserMenuOpen(false)}
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          logout();
+                          router.push('/login');
+                        }}
                       >
                         <LogOut className="h-4 w-4" />
                         Sign Out
