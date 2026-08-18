@@ -93,12 +93,13 @@ export default function Navbar() {
         )}
       >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between gap-3 lg:h-20">
-          {/* Mobile menu button */}
+        <div className="flex h-16 items-center justify-between gap-2 lg:h-20 lg:gap-3">
+          {/* Mobile menu button — 44x44px minimum tap target (WCAG/touch guidance),
+              decoupled from the icon's own visual size via an explicit h-11 w-11 box. */}
           <button
             onClick={() => setMobileMenuOpen(true)}
             className={clsx(
-              'flex items-center justify-center rounded-xl p-2 transition-colors lg:hidden',
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors lg:hidden',
               scrolled
                 ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                 : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -109,7 +110,8 @@ export default function Navbar() {
           </button>
 
           {/* Logo — always on a light pill: the mark itself is dark (navy/black), so it
-              needs a light backdrop whether the nav is floating over the hero or scrolled solid. */}
+              needs a light backdrop whether the nav is floating over the hero or scrolled solid.
+              Slightly narrower on the smallest phones to leave room for the collapsed header's icons. */}
           <Link
             href="/"
             className="flex h-10 shrink-0 items-center rounded-xl bg-white/90 px-2 shadow-sm shadow-black/10 backdrop-blur-sm transition-shadow hover:shadow-md lg:h-12"
@@ -121,7 +123,7 @@ export default function Navbar() {
               width={846}
               height={212}
               priority
-              className="h-8 w-[136px] object-contain lg:h-9 lg:w-[154px]"
+              className="h-7 w-[118px] object-contain sm:h-8 sm:w-[136px] lg:h-9 lg:w-[154px]"
             />
           </Link>
 
@@ -165,7 +167,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right section */}
-          <div className="flex items-center gap-1.5 lg:gap-2">
+          <div className="flex items-center gap-1 lg:gap-2">
             {/* Desktop search toggle */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
@@ -218,7 +220,7 @@ export default function Navbar() {
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className={clsx(
-                'flex items-center justify-center rounded-xl p-2 transition-colors xl:hidden',
+                'flex h-11 w-11 items-center justify-center rounded-xl transition-colors xl:hidden',
                 scrolled
                   ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                   : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -244,7 +246,7 @@ export default function Navbar() {
             <Link
               href="/cart"
               className={clsx(
-                'relative flex items-center justify-center rounded-xl p-2 transition-colors',
+                'relative flex h-11 w-11 items-center justify-center rounded-xl transition-colors',
                 scrolled
                   ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                   : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -257,6 +259,21 @@ export default function Navbar() {
                   {displayedCartCount}
                 </span>
               )}
+            </Link>
+
+            {/* Compact account icon — visible in the collapsed (mobile/tablet, <1024px) header
+                as a direct link, since the full dropdown menu below is desktop-only. */}
+            <Link
+              href="/account"
+              className={clsx(
+                'flex h-11 w-11 items-center justify-center rounded-xl transition-colors lg:hidden',
+                scrolled
+                  ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white'
+              )}
+              aria-label="Account"
+            >
+              <User className="h-5 w-5" />
             </Link>
 
             {/* User dropdown */}
@@ -370,13 +387,13 @@ export default function Navbar() {
                 />
                 <div className="absolute right-2 flex items-center gap-1">
                   <button
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-zumbii-600"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-zumbii-600"
                     aria-label="Voice search"
                   >
                     <Mic className="h-4 w-4" />
                   </button>
                   <button
-                    className="flex h-8 w-8 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-zumbii-600"
+                    className="flex h-11 w-11 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary hover:text-zumbii-600"
                     aria-label="Image search"
                   >
                     <ImageIcon className="h-4 w-4" />
@@ -425,7 +442,7 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center rounded-xl p-2 text-text-secondary transition-colors hover:bg-surface-tertiary"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl text-text-secondary transition-colors hover:bg-surface-tertiary"
                   aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />

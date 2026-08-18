@@ -118,7 +118,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
                   e.preventDefault();
                   onQuickView(product);
                 }}
-                className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-white/90 backdrop-blur-sm text-text-primary text-xs font-medium rounded-lg hover:bg-white transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-white/90 backdrop-blur-sm text-text-primary text-xs font-medium rounded-lg hover:bg-white transition-colors"
               >
                 <Eye className="w-3.5 h-3.5" />
                 Quick View
@@ -128,7 +128,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-1.5 h-9 bg-gold-500 text-zumbii-950 text-xs font-semibold rounded-lg hover:bg-gold-600 transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-gold-500 text-zumbii-950 text-xs font-semibold rounded-lg hover:bg-gold-600 transition-colors"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
                 Add to Cart

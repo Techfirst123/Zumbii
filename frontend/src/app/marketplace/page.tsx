@@ -261,7 +261,7 @@ function MarketplaceContent() {
           {brands.map((brand) => (
             <label
               key={brand}
-              className="flex items-center gap-2.5 py-1.5 cursor-pointer group"
+              className="flex min-h-11 items-center gap-2.5 py-1.5 cursor-pointer group"
             >
               <div
                 className={clsx(
@@ -287,7 +287,7 @@ function MarketplaceContent() {
           {ratings.map((r) => (
             <label
               key={r}
-              className="flex items-center gap-2.5 py-1.5 cursor-pointer group"
+              className="flex min-h-11 items-center gap-2.5 py-1.5 cursor-pointer group"
             >
               <div
                 className={clsx(
@@ -317,7 +317,7 @@ function MarketplaceContent() {
       </div>
 
       <div className="border-t border-border pt-5">
-        <label className="flex items-center justify-between cursor-pointer">
+        <label className="flex min-h-11 items-center justify-between cursor-pointer">
           <span className="text-sm font-medium text-text-primary">Wholesale Only</span>
           <button
             type="button"
@@ -346,7 +346,7 @@ function MarketplaceContent() {
           <button
             type="button"
             onClick={() => setMoqFilter(Math.max(0, moqFilter - 10))}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors"
+            className="w-11 h-11 rounded-lg border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors"
           >
             <Minus className="w-3.5 h-3.5 text-text-secondary" />
           </button>
@@ -356,7 +356,7 @@ function MarketplaceContent() {
           <button
             type="button"
             onClick={() => setMoqFilter(moqFilter + 10)}
-            className="w-8 h-8 rounded-lg border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors"
+            className="w-11 h-11 rounded-lg border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors"
           >
             <Plus className="w-3.5 h-3.5 text-text-secondary" />
           </button>
@@ -563,14 +563,14 @@ function MarketplaceContent() {
                   <div className="flex items-center border border-border rounded-xl overflow-hidden">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={clsx('p-2', viewMode === 'grid' ? 'bg-zumbii-600 text-white' : 'text-text-tertiary')}
+                      className={clsx('flex h-11 w-11 items-center justify-center', viewMode === 'grid' ? 'bg-zumbii-600 text-white' : 'text-text-tertiary')}
                       aria-label="Grid view"
                     >
                       <Grid3X3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={clsx('p-2', viewMode === 'list' ? 'bg-zumbii-600 text-white' : 'text-text-tertiary')}
+                      className={clsx('flex h-11 w-11 items-center justify-center', viewMode === 'list' ? 'bg-zumbii-600 text-white' : 'text-text-tertiary')}
                       aria-label="List view"
                     >
                       <List className="w-4 h-4" />
@@ -653,7 +653,7 @@ function MarketplaceContent() {
                         </motion.div>
                       ) : (
                         <motion.div key={product.id} variants={listVariants}>
-                          <ProductCard product={product} className="flex-row! [&>a]:flex! [&>a]:flex-row! [&_.aspect-square]:w-48! [&_.aspect-square]:h-48!" />
+                          <ProductCard product={product} className="flex-row! [&>a]:flex! [&>a]:flex-row! [&_.aspect-square]:w-28! [&_.aspect-square]:h-28! sm:[&_.aspect-square]:w-48! sm:[&_.aspect-square]:h-48!" />
                         </motion.div>
                       )
                     )}
@@ -685,7 +685,7 @@ function MarketplaceContent() {
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-11 h-11 rounded-xl border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                     aria-label="Previous page"
                   >
                     <ChevronLeft className="w-4 h-4 text-text-secondary" />
@@ -695,7 +695,7 @@ function MarketplaceContent() {
                       key={page}
                       onClick={() => setCurrentPage(page)}
                       className={clsx(
-                        'min-w-[40px] h-10 rounded-xl text-sm font-medium transition-all duration-200',
+                        'min-w-11 h-11 rounded-xl text-sm font-medium transition-all duration-200',
                         page === currentPage
                           ? 'bg-zumbii-600 text-white shadow-md shadow-zumbii-600/20'
                           : 'border border-border text-text-secondary hover:bg-surface-tertiary'
@@ -707,7 +707,7 @@ function MarketplaceContent() {
                   <button
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
-                    className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                    className="w-11 h-11 rounded-xl border border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                     aria-label="Next page"
                   >
                     <ChevronRight className="w-4 h-4 text-text-secondary" />

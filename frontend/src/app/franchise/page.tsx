@@ -269,14 +269,17 @@ const currentBusinessOptions = [
 
 function HeroSection() {
   return (
-    <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+    <section className="relative overflow-hidden">
       <div className="absolute inset-0 gradient-bg" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,255,255,0.12),transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(12,142,234,0.25),transparent_50%)]" />
       <div className="absolute top-20 left-10 w-72 h-72 bg-zumbii-400/20 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-zumbii-300/20 rounded-full blur-3xl" />
 
-      <div className="relative z-10 w-full section-padding pt-28 pb-16 lg:pt-36 lg:pb-24">
+      <div
+        className="relative z-10 w-full section-padding"
+        style={{ paddingBlock: "clamp(56px, 10vw, 128px)" }}
+      >
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <motion.div initial="hidden" animate="visible" variants={staggerContainer}>
             <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/10 mb-6">
@@ -988,7 +991,7 @@ function StatsSection() {
   ];
 
   return (
-    <section ref={ref} className="relative -mt-16 z-20">
+    <section ref={ref} className="relative -mt-8 lg:-mt-16 z-20">
       <div className="section-padding">
         <div className="glass rounded-3xl shadow-xl border border-white/20 py-8 px-6 sm:py-10 sm:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">

@@ -254,6 +254,24 @@ function CheckoutPage() {
   };
 
   const renderProgressBar = () => (
+    <>
+      {/* Compact mobile step indicator — the full step bar below is desktop-only */}
+      <div className="mb-6 flex items-center gap-3 sm:hidden">
+        <span className="shrink-0 text-xs font-semibold text-zumbii-950">
+          Step {stepIndex + 1} of {steps.length}: {steps[stepIndex].label}
+        </span>
+        <div className="flex flex-1 items-center gap-1.5">
+          {steps.map((step, idx) => (
+            <div
+              key={step.id}
+              className={clsx(
+                'h-1.5 flex-1 rounded-full transition-colors',
+                idx <= stepIndex ? 'bg-zumbii-950' : 'bg-surface-tertiary'
+              )}
+            />
+          ))}
+        </div>
+      </div>
     <div className="hidden sm:block mb-8">
       <div className="flex items-center justify-between relative">
         <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 z-0" />
@@ -300,6 +318,7 @@ function CheckoutPage() {
         })}
       </div>
     </div>
+    </>
   );
 
   const renderAddressStep = () => (
@@ -310,7 +329,7 @@ function CheckoutPage() {
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h2 className="text-xl font-bold text-text-primary">Delivery Address</h2>
           <p className="text-sm text-text-tertiary mt-1">Select or add a new delivery address</p>
@@ -318,6 +337,7 @@ function CheckoutPage() {
         <Button
           variant="outline"
           size="sm"
+          className="shrink-0"
           onClick={() => { setShowAddressForm(true); setEditingAddress(null); setNewAddress({ line1: '', line2: '', city: '', state: '', pincode: '', phone: '', name: '', type: 'home' }); }}
         >
           <Plus className="w-4 h-4" />
@@ -366,7 +386,7 @@ function CheckoutPage() {
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); toast.success('Address editing coming soon'); }}
-                    className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
+                    className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
                     aria-label="Edit address"
                   >
                     <Pencil className="w-4 h-4" />
@@ -382,7 +402,7 @@ function CheckoutPage() {
             <h3 className="text-base font-semibold text-text-primary">{editingAddress ? 'Edit Address' : 'New Address'}</h3>
             <button
               onClick={() => { setShowAddressForm(false); setErrors({}); }}
-              className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors"
+              className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors"
               aria-label="Close address form"
             >
               <X className="w-4 h-4 text-text-secondary" />
@@ -402,14 +422,14 @@ function CheckoutPage() {
             <Input label="Pincode" value={newAddress.pincode} onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })} error={errors.pincode} placeholder="400069" />
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">Address Type</label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(['home', 'work', 'other'] as const).map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setNewAddress({ ...newAddress, type })}
                     className={clsx(
-                      'flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all',
+                      'flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all',
                       newAddress.type === type
                         ? 'border-zumbii-600 bg-zumbii-50 text-zumbii-600'
                         : 'border-border text-text-secondary hover:border-zumbii-200'
@@ -875,7 +895,7 @@ function CheckoutPage() {
         {renderProgressBar()}
 
         <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="min-w-0 lg:col-span-2">
             <AnimatePresence mode="wait">
               {currentStep === 'address' && renderAddressStep()}
               {currentStep === 'shipping' && renderShippingStep()}
@@ -917,7 +937,7 @@ function CheckoutPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="min-w-0 lg:col-span-1">
             <div className="sticky top-28">
               <Card className="p-5" hover={false}>
                 <h3 className="text-sm font-bold text-text-primary mb-4">Order Summary</h3>

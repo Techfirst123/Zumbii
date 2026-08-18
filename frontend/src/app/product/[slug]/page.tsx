@@ -215,7 +215,7 @@ function QuantitySelector({
       <button
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
+        className="w-11 h-11 flex items-center justify-center rounded-lg text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
       >
         <Minus className="w-4 h-4" />
       </button>
@@ -233,7 +233,7 @@ function QuantitySelector({
       <button
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
+        className="w-11 h-11 flex items-center justify-center rounded-lg text-text-secondary hover:bg-white hover:text-text-primary disabled:opacity-30 disabled:pointer-events-none transition-colors"
       >
         <Plus className="w-4 h-4" />
       </button>
@@ -613,13 +613,13 @@ export default function ProductPage() {
 
       <Container className="py-6 lg:py-8">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
             <FadeView>
               <ImageGallery images={product.images} />
             </FadeView>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <FadeView>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">

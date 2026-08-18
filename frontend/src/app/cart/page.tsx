@@ -202,7 +202,7 @@ function CartPage() {
                                 <button
                                   onClick={() => handleQuantityChange(item.productId, -1)}
                                   disabled={item.quantity <= 1}
-                                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                  className="w-11 h-11 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Decrease quantity"
                                 >
                                   <Minus className="w-3.5 h-3.5 text-text-secondary" />
@@ -213,7 +213,7 @@ function CartPage() {
                                 <button
                                   onClick={() => handleQuantityChange(item.productId, 1)}
                                   disabled={item.quantity >= item.maxQuantity}
-                                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                  className="w-11 h-11 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Increase quantity"
                                 >
                                   <Plus className="w-3.5 h-3.5 text-text-secondary" />
@@ -226,14 +226,14 @@ function CartPage() {
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleMoveToWishlist(item)}
-                                className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-rose-500"
+                                className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-rose-500"
                                 aria-label="Move to wishlist"
                               >
                                 <Heart className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleRemoveItem(item.productId, item.name)}
-                                className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
+                                className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
                                 aria-label="Remove item"
                               >
                                 <Trash2 className="w-4 h-4" />
