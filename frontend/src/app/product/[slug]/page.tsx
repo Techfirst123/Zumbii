@@ -666,6 +666,11 @@ export default function ProductPage() {
                       <Badge variant="sale" size="sm">{discount}% off</Badge>
                     </>
                   )}
+                  {product.shortDescription && (
+                    <span className="text-sm font-medium text-text-tertiary">
+                      / {product.shortDescription}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-text-tertiary">
                   +₹{gstAmount.toLocaleString('en-IN')} GST ({product.gstRate}%)
