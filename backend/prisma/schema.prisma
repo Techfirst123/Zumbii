@@ -468,3 +468,18 @@ model Coupon {
   @@index([code])
   @@map("coupons")
 }
+
+model OtpCode {
+  id         String    @id @default(uuid())
+  type       String
+  identifier String
+  otpHash    String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  lastSentAt DateTime  @default(now())
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([type, identifier])
+  @@map("otp_codes")
+}

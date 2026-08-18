@@ -220,6 +220,19 @@ export const authApi = {
     api.post<AuthResponse>('/auth/register', payload, { auth: false }),
 };
 
+export interface SendOtpResponse {
+  message: string;
+  expiresInMinutes: number;
+  devMode: boolean;
+}
+
+export const otpApi = {
+  send: (identifier: { phone?: string; email?: string }) =>
+    api.post<SendOtpResponse>('/auth/otp/send', identifier, { auth: false }),
+  verify: (identifier: { phone?: string; email?: string }, otp: string) =>
+    api.post<AuthResponse>('/auth/otp/verify', { ...identifier, otp }, { auth: false }),
+};
+
 export interface PincodeCheckResponse {
   code: string;
   serviceable: boolean;

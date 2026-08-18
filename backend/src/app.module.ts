@@ -12,6 +12,7 @@ import { B2bModule } from './b2b/b2b.module';
 import { BlogModule } from './blog/blog.module';
 import { UploadModule } from './upload/upload.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DeliveryModule } from './delivery/delivery.module';
     BlogModule,
     UploadModule,
     DeliveryModule,
+    OtpModule,
   ],
 })
 export class AppModule {}
