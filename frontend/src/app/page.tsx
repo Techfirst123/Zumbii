@@ -30,6 +30,7 @@ import Container from "@/components/ui/container";
 import SectionHeader from "@/components/ui/section-header";
 import { ProductCard } from "@/components/ui/ProductCard";
 import PromoBanner from "@/components/home/PromoBanner";
+import CampaignBanners from "@/components/home/CampaignBanners";
 import { productsApi, categoriesApi, ApiError, type BackendCategory } from "@/lib/api";
 import { mapBackendProduct } from "@/lib/adapters";
 import { categoryVisual } from "@/lib/categoryVisuals";
@@ -651,6 +652,7 @@ export default function HomePage() {
   return (
     <>
       <HeroSection featuredProducts={featured} loading={loading} />
+      <CampaignBanners />
       <CategoriesSection />
       <BestSellersSection products={bestSellers} loading={loading} />
       <PromoBanner />

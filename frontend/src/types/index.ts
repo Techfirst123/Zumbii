@@ -42,6 +42,13 @@ export interface Product {
   status: 'active' | 'inactive' | 'draft';
   createdAt: string;
   updatedAt: string;
+  activeCampaign?: {
+    campaignId: string;
+    campaignName: string;
+    campaignSlug: string;
+    campaignPrice: number;
+    discountPercent: number;
+  } | null;
 }
 
 export interface Specification {

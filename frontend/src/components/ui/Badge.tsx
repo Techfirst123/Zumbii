@@ -2,9 +2,9 @@
 
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
-import { Sparkles, Tag, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import { Sparkles, Tag, AlertCircle, CheckCircle, Info, AlertTriangle, Megaphone } from 'lucide-react';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'new' | 'sale' | 'brand';
+type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'new' | 'sale' | 'brand' | 'campaign';
 
 interface BadgeProps {
   variant?: BadgeVariant;
@@ -22,6 +22,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   new: 'bg-gold-100 text-gold-800 border-gold-200',
   sale: 'bg-rose-50 text-rose-700 border-rose-200',
   brand: 'bg-zumbii-950 text-gold-400 border-zumbii-900',
+  campaign: 'bg-gold-100 text-gold-800 border-gold-300',
 };
 
 const sizeStyles = {
@@ -38,6 +39,7 @@ const variantIcons: Record<BadgeVariant, ReactNode | null> = {
   new: <Sparkles className="w-3 h-3" />,
   sale: <Tag className="w-3 h-3" />,
   brand: null,
+  campaign: <Megaphone className="w-3 h-3" />,
 };
 
 function Badge({ variant = 'default', children, className, size = 'md' }: BadgeProps) {

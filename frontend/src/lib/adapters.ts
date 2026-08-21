@@ -91,5 +91,6 @@ export function mapBackendProduct(p: BackendProduct): Product {
     status: p.isActive ? 'active' : 'inactive',
     createdAt,
     updatedAt: p.updatedAt ?? createdAt,
+    activeCampaign: p.activeCampaign ?? null,
   };
 }

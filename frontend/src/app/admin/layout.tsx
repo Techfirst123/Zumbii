@@ -52,7 +52,7 @@ const sidebarLinks = [
   { label: "Coupons", href: "#", icon: Percent },
   { label: "Payments", href: "#", icon: Wallet },
   { label: "Reports", href: "#", icon: BarChart3 },
-  { label: "Marketing", href: "#", icon: Megaphone },
+  { label: "Campaigns", href: "/admin/campaigns", icon: Megaphone },
   { label: "CMS", href: "#", icon: FileText },
   { label: "Blog", href: "#", icon: Newspaper },
   { label: "Support Tickets", href: "#", icon: LifeBuoy },

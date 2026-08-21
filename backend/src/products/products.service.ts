@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
 
 @Injectable()
 export class ProductsService {
@@ -90,6 +91,7 @@ export class ProductsService {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
         { tags: { has: search } },
       ];
     }
@@ -127,8 +129,13 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
+    const campaignMap = await getActiveCampaignsByProductId(
+      this.prisma,
+      products.map((p) => p.id),
+    );
+
     return {
-      data: products,
+      data: products.map((p) => ({ ...p, activeCampaign: campaignMap.get(p.id) ?? null })),
       total,
       page,
       limit,
@@ -157,7 +164,8 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    return product;
+    const campaignMap = await getActiveCampaignsByProductId(this.prisma, [product.id]);
+    return { ...product, activeCampaign: campaignMap.get(product.id) ?? null };
   }
 
   async findBySlug(slug: string) {
@@ -181,7 +189,8 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    return product;
+    const campaignMap = await getActiveCampaignsByProductId(this.prisma, [product.id]);
+    return { ...product, activeCampaign: campaignMap.get(product.id) ?? null };
   }
 
   async update(id: string, dto: UpdateProductDto) {
@@ -232,7 +241,7 @@ export class ProductsService {
   }
 
   async getFeatured() {
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
       take: 8,
       include: {
@@ -240,10 +249,16 @@ export class ProductsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    const campaignMap = await getActiveCampaignsByProductId(
+      this.prisma,
+      products.map((p) => p.id),
+    );
+    return products.map((p) => ({ ...p, activeCampaign: campaignMap.get(p.id) ?? null }));
   }
 
   async getRelated(productId: string, categoryId: string) {
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: {
         isActive: true,
         categoryId,
@@ -254,6 +269,12 @@ export class ProductsService {
         category: { select: { id: true, name: true, slug: true } },
       },
     });
+
+    const campaignMap = await getActiveCampaignsByProductId(
+      this.prisma,
+      products.map((p) => p.id),
+    );
+    return products.map((p) => ({ ...p, activeCampaign: campaignMap.get(p.id) ?? null }));
   }
 
   async updateStock(id: string, quantity: number) {

@@ -61,6 +61,20 @@ enum RFQStatus {
   CLOSED
 }
 
+enum CampaignType {
+  FESTIVE_SALE
+  FLASH_SALE
+  CLEARANCE
+  FRANCHISE_BULK_OFFER
+  NEW_LAUNCH
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
@@ -159,6 +173,7 @@ model Product {
   reviews        Review[]
   cartItems      Cart[]
   wishlistItems  Wishlist[]
+  campaignProducts CampaignProduct[]
 
   @@index([slug])
   @@index([categoryId])
@@ -467,6 +482,45 @@ model Coupon {
 
   @@index([code])
   @@map("coupons")
+}
+
+model Campaign {
+  id             String            @id @default(uuid())
+  name           String
+  slug           String            @unique
+  type           CampaignType
+  description    String?
+  bannerImageUrl String?
+  startAt        DateTime
+  endAt          DateTime
+  status         CampaignStatus    @default(DRAFT)
+  showOnHomepage Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  products       CampaignProduct[]
+
+  @@index([slug])
+  @@index([status, startAt, endAt])
+  @@map("campaigns")
+}
+
+model CampaignProduct {
+  id              String   @id @default(uuid())
+  campaignId      String
+  productId       String
+  campaignPrice   Decimal  @db.Decimal(10, 2)
+  discountPercent Decimal  @db.Decimal(5, 2)
+  stockCap        Int?
+  createdAt       DateTime @default(now())
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, productId])
+  @@index([campaignId])
+  @@index([productId])
+  @@map("campaign_products")
 }
 
 model OtpCode {

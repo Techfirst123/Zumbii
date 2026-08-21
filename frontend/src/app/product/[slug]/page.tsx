@@ -54,6 +54,7 @@ import { productsApi, ApiError } from '@/lib/api';
 import { mapBackendProduct, mapBackendReviews } from '@/lib/adapters';
 import { useCartStore } from '@/store/cartStore';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { trackEvent } from '@/lib/gtag';
 
 const faqs = [
   {
@@ -527,6 +528,17 @@ export default function ProductPage() {
     };
   }, [params?.slug]);
 
+  useEffect(() => {
+    if (!product?.activeCampaign) return;
+    trackEvent('view_promotion', {
+      promotion_id: product.activeCampaign.campaignSlug,
+      promotion_name: product.activeCampaign.campaignName,
+      item_id: product.sku,
+      item_name: product.name,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.activeCampaign?.campaignId]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -547,12 +559,16 @@ export default function ProductPage() {
     );
   }
 
-  const discount = product.comparePrice
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+  const campaign = product.activeCampaign;
+  const displayPrice = campaign ? campaign.campaignPrice : product.price;
+  const strikePrice = campaign ? product.price : product.comparePrice;
+
+  const discount = strikePrice
+    ? Math.round(((strikePrice - displayPrice) / strikePrice) * 100)
     : 0;
 
-  const gstAmount = Math.round(product.price * (product.gstRate / 100));
-  const totalWithGst = product.price + gstAmount;
+  const gstAmount = Math.round(displayPrice * (product.gstRate / 100));
+  const totalWithGst = displayPrice + gstAmount;
 
   const ratingBreakdown = [5, 4, 3, 2, 1].map((stars) => {
     const count = reviews.filter((r) => r.rating === stars).length;
@@ -570,7 +586,7 @@ export default function ProductPage() {
       slug: product.slug,
       name: product.name,
       image: product.images[0],
-      price: product.price,
+      price: displayPrice,
       quantity,
       maxQuantity: Math.max(product.stock, 1),
       seller: product.seller.businessName,
@@ -623,8 +639,9 @@ export default function ProductPage() {
             <FadeView>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
+                  {campaign && <Badge variant="campaign">{campaign.campaignName}</Badge>}
                   {product.isNew && <Badge variant="new">New Launch</Badge>}
-                  {discount > 0 && <Badge variant="sale">{discount}% OFF</Badge>}
+                  {!campaign && discount > 0 && <Badge variant="sale">{discount}% OFF</Badge>}
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary leading-tight tracking-tight">
@@ -656,14 +673,14 @@ export default function ProductPage() {
               <Card className="p-5 space-y-3">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="text-3xl font-bold text-text-primary">
-                    ₹{product.price.toLocaleString('en-IN')}
+                    ₹{displayPrice.toLocaleString('en-IN')}
                   </span>
-                  {product.comparePrice && product.comparePrice > product.price && (
+                  {strikePrice && strikePrice > displayPrice && (
                     <>
                       <span className="text-lg text-text-tertiary line-through">
-                        ₹{product.comparePrice.toLocaleString('en-IN')}
+                        ₹{strikePrice.toLocaleString('en-IN')}
                       </span>
-                      <Badge variant="sale" size="sm">{discount}% off</Badge>
+                      <Badge variant={campaign ? 'campaign' : 'sale'} size="sm">{discount}% off</Badge>
                     </>
                   )}
                   {product.shortDescription && (
@@ -710,7 +727,7 @@ export default function ProductPage() {
                 <div className="flex items-center gap-3">
                   <QuantitySelector value={quantity} onChange={setQuantity} min={product.moq} />
                   <span className="text-xs text-text-tertiary">
-                    Total: <strong className="text-text-primary">₹{(product.price * quantity).toLocaleString('en-IN')}</strong>
+                    Total: <strong className="text-text-primary">₹{(displayPrice * quantity).toLocaleString('en-IN')}</strong>
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">

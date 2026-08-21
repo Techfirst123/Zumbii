@@ -120,6 +120,14 @@ export interface BackendCategory {
   _count?: { products: number; children?: number };
 }
 
+export interface BackendActiveCampaign {
+  campaignId: string;
+  campaignName: string;
+  campaignSlug: string;
+  campaignPrice: number;
+  discountPercent: number;
+}
+
 export interface BackendProduct {
   id: string;
   name: string;
@@ -148,6 +156,7 @@ export interface BackendProduct {
   brandId?: string | null;
   brand?: { id: string; name: string; slug: string } | null;
   reviews?: BackendReview[];
+  activeCampaign?: BackendActiveCampaign | null;
 }
 
 export interface BackendReview {
@@ -284,6 +293,90 @@ export const productsApi = {
   update: (id: string, payload: Record<string, unknown>) =>
     api.put<BackendProduct>(`/products/${id}`, payload),
   remove: (id: string) => api.delete<{ message: string }>(`/products/${id}`),
+};
+
+export type CampaignType =
+  | 'FESTIVE_SALE'
+  | 'FLASH_SALE'
+  | 'CLEARANCE'
+  | 'FRANCHISE_BULK_OFFER'
+  | 'NEW_LAUNCH';
+
+export type EffectiveCampaignStatus = 'Draft' | 'Scheduled' | 'Active' | 'Expired';
+
+export interface BackendCampaignProduct {
+  id: string;
+  campaignId: string;
+  productId: string;
+  campaignPrice: number;
+  discountPercent: number;
+  stockCap?: number | null;
+  createdAt: string;
+  product?: BackendProduct;
+}
+
+export interface BackendCampaign {
+  id: string;
+  name: string;
+  slug: string;
+  type: CampaignType;
+  description?: string | null;
+  bannerImageUrl?: string | null;
+  startAt: string;
+  endAt: string;
+  status: 'DRAFT' | 'ACTIVE' | 'ENDED';
+  effectiveStatus: EffectiveCampaignStatus;
+  showOnHomepage: boolean;
+  createdAt: string;
+  updatedAt: string;
+  products?: BackendCampaignProduct[];
+  _count?: { products: number };
+}
+
+export interface CampaignListResponse {
+  data: BackendCampaign[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CampaignQuery {
+  search?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface AttachCampaignProductItem {
+  productId: string;
+  campaignPrice?: number;
+  discountPercent?: number;
+  stockCap?: number;
+}
+
+export interface CampaignAttachResult {
+  attached: BackendCampaignProduct[];
+  warnings: string[];
+}
+
+export const campaignsApi = {
+  list: (query: CampaignQuery = {}) =>
+    api.get<CampaignListResponse>(`/campaigns${toQueryString(query)}`),
+  get: (id: string) => api.get<BackendCampaign>(`/campaigns/${id}`),
+  getBySlug: (slug: string) =>
+    api.get<BackendCampaign>(`/campaigns/slug/${slug}`, { auth: false }),
+  homepage: () => api.get<BackendCampaign[]>('/campaigns/homepage', { auth: false }),
+  create: (payload: Record<string, unknown>) =>
+    api.post<BackendCampaign>('/campaigns', payload),
+  update: (id: string, payload: Record<string, unknown>) =>
+    api.put<BackendCampaign>(`/campaigns/${id}`, payload),
+  remove: (id: string) => api.delete<{ message: string }>(`/campaigns/${id}`),
+  endEarly: (id: string) => api.put<BackendCampaign>(`/campaigns/${id}/end`, {}),
+  addProducts: (id: string, items: AttachCampaignProductItem[]) =>
+    api.post<CampaignAttachResult>(`/campaigns/${id}/products`, { items }),
+  removeProduct: (id: string, productId: string) =>
+    api.delete<{ message: string }>(`/campaigns/${id}/products/${productId}`),
 };
 
 export const uploadApi = {

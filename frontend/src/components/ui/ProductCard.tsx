@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -12,6 +12,7 @@ import { Badge } from './Badge';
 import { StarRating } from './StarRating';
 import { useCartStore } from '@/store/cartStore';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { trackEvent } from '@/lib/gtag';
 
 interface ProductCardProps {
   product: Product;
@@ -38,7 +39,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
       slug: product.slug,
       name: product.name,
       image: product.images[0] || '/placeholder.svg',
-      price: product.price,
+      price: displayPrice,
       quantity: product.moq > 1 ? product.moq : 1,
       maxQuantity: Math.max(product.stock, 1),
       seller: product.seller?.businessName || '',
@@ -50,7 +51,32 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
       ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
       : 0;
 
-  const hasBadge = product.isNew || product.isFeatured || discount > 0;
+  const campaign = product.activeCampaign;
+  const displayPrice = campaign ? campaign.campaignPrice : product.price;
+  const strikePrice = campaign ? product.price : product.comparePrice;
+
+  const hasBadge = product.isNew || product.isFeatured || discount > 0 || Boolean(campaign);
+
+  useEffect(() => {
+    if (!campaign) return;
+    trackEvent('view_promotion', {
+      promotion_id: campaign.campaignSlug,
+      promotion_name: campaign.campaignName,
+      item_id: product.sku,
+      item_name: product.name,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign?.campaignId]);
+
+  function handlePromotionClick() {
+    if (!campaign) return;
+    trackEvent('select_promotion', {
+      promotion_id: campaign.campaignSlug,
+      promotion_name: campaign.campaignName,
+      item_id: product.sku,
+      item_name: product.name,
+    });
+  }
 
   return (
     <motion.div
@@ -65,7 +91,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
         className
       )}
     >
-      <Link href={`/product/${product.slug}`} className="block">
+      <Link href={`/product/${product.slug}`} className="block" onClick={handlePromotionClick}>
         <div className="relative aspect-square overflow-hidden bg-surface-tertiary">
           {!imageLoaded && (
             <div className="absolute inset-0 animate-pulse bg-surface-tertiary" />
@@ -84,13 +110,16 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
 
           {hasBadge && (
             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+              {campaign && (
+                <Badge variant="campaign" size="sm">{campaign.campaignName}</Badge>
+              )}
               {product.isNew && (
                 <Badge variant="new" size="sm">New</Badge>
               )}
-              {discount > 0 && (
+              {!campaign && discount > 0 && (
                 <Badge variant="sale" size="sm">{discount}% OFF</Badge>
               )}
-              {product.isFeatured && !product.isNew && discount === 0 && (
+              {product.isFeatured && !product.isNew && discount === 0 && !campaign && (
                 <Badge variant="info" size="sm">Trending</Badge>
               )}
             </div>
@@ -145,7 +174,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
           </p>
         )}
 
-        <Link href={`/product/${product.slug}`}>
+        <Link href={`/product/${product.slug}`} onClick={handlePromotionClick}>
           <h3 className="font-medium text-sm text-text-primary leading-snug line-clamp-2 hover:text-zumbii-600 transition-colors">
             {product.name}
           </h3>
@@ -161,11 +190,11 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
         <div className="flex items-baseline justify-between gap-1.5">
           <div className="flex items-baseline gap-1.5">
             <span className="text-base font-bold text-text-primary">
-              ₹{product.price.toLocaleString('en-IN')}
+              ₹{displayPrice.toLocaleString('en-IN')}
             </span>
-            {product.comparePrice && product.comparePrice > product.price && (
+            {strikePrice && strikePrice > displayPrice && (
               <span className="text-xs text-text-tertiary line-through">
-                ₹{product.comparePrice.toLocaleString('en-IN')}
+                ₹{strikePrice.toLocaleString('en-IN')}
               </span>
             )}
           </div>

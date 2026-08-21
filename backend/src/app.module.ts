@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 import { OrdersModule } from './orders/orders.module';
 import { FranchiseModule } from './franchise/franchise.module';
 import { SellersModule } from './sellers/sellers.module';
@@ -22,6 +23,7 @@ import { OtpModule } from './otp/otp.module';
     UsersModule,
     ProductsModule,
     CategoriesModule,
+    CampaignsModule,
     OrdersModule,
     FranchiseModule,
     SellersModule,
