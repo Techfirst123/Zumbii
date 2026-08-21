@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order-status.dto';
+import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
 
 @Injectable()
 export class OrdersService {
@@ -31,8 +32,14 @@ export class OrdersService {
       throw new BadRequestException('Some products are not available');
     }
 
+    const campaignMap = await getActiveCampaignsByProductId(
+      this.prisma,
+      products.map((p) => p.id),
+    );
+
     let subtotal = 0;
     const orderItems: any[] = [];
+    const campaignIncrements: { campaignProductId: string; quantity: number }[] = [];
 
     for (const item of dto.items) {
       const product = products.find((p: { id: string }) => p.id === item.productId);
@@ -47,14 +54,28 @@ export class OrdersService {
         );
       }
 
-      const total = Number(product.price) * item.quantity;
+      const campaign = campaignMap.get(product.id);
+      if (campaign && campaign.stockCap !== null) {
+        const remaining = campaign.stockCap - campaign.soldCount;
+        if (item.quantity > remaining) {
+          throw new BadRequestException(
+            remaining > 0
+              ? `Only ${remaining} unit(s) of ${product.name} left at the ${campaign.campaignName} price.`
+              : `${product.name} is sold out at the ${campaign.campaignName} price.`,
+          );
+        }
+        campaignIncrements.push({ campaignProductId: campaign.campaignProductId, quantity: item.quantity });
+      }
+
+      const unitPrice = campaign ? campaign.campaignPrice : Number(product.price);
+      const total = unitPrice * item.quantity;
       subtotal += total;
 
       orderItems.push({
         productId: product.id,
         name: product.name,
         sku: product.sku,
-        price: product.price,
+        price: unitPrice,
         quantity: item.quantity,
         total,
         image: product.images[0] || null,
@@ -139,6 +160,13 @@ export class OrdersService {
           quantity: { decrement: item.quantity },
           soldCount: { increment: item.quantity },
         },
+      });
+    }
+
+    for (const increment of campaignIncrements) {
+      await this.prisma.campaignProduct.update({
+        where: { id: increment.campaignProductId },
+        data: { soldCount: { increment: increment.quantity } },
       });
     }
 

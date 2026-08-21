@@ -311,6 +311,7 @@ export interface BackendCampaignProduct {
   campaignPrice: number;
   discountPercent: number;
   stockCap?: number | null;
+  soldCount: number;
   createdAt: string;
   product?: BackendProduct;
 }

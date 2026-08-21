@@ -512,6 +512,7 @@ model CampaignProduct {
   campaignPrice   Decimal  @db.Decimal(10, 2)
   discountPercent Decimal  @db.Decimal(5, 2)
   stockCap        Int?
+  soldCount       Int      @default(0)
   createdAt       DateTime @default(now())
 
   campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)

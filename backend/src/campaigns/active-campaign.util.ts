@@ -1,11 +1,14 @@
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface ActiveCampaignInfo {
+  campaignProductId: string;
   campaignId: string;
   campaignName: string;
   campaignSlug: string;
   campaignPrice: number;
   discountPercent: number;
+  stockCap: number | null;
+  soldCount: number;
 }
 
 export async function getActiveCampaignsByProductId(
@@ -28,11 +31,14 @@ export async function getActiveCampaignsByProductId(
   for (const row of rows) {
     if (map.has(row.productId)) continue;
     map.set(row.productId, {
+      campaignProductId: row.id,
       campaignId: row.campaign.id,
       campaignName: row.campaign.name,
       campaignSlug: row.campaign.slug,
       campaignPrice: Number(row.campaignPrice),
       discountPercent: Number(row.discountPercent),
+      stockCap: row.stockCap,
+      soldCount: row.soldCount,
     });
   }
 

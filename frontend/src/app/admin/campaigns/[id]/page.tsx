@@ -519,7 +519,7 @@ export default function CampaignDetailPage() {
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Regular Price</th>
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Campaign Price</th>
                   <th className="text-left py-3 px-4 text-gray-500 font-medium">Discount</th>
-                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Stock Cap</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Sold / Cap</th>
                   <th className="py-3 px-4" />
                 </tr>
               </thead>
@@ -556,7 +556,15 @@ export default function CampaignDetailPage() {
                       ₹{Number(cp.campaignPrice).toLocaleString("en-IN")}
                     </td>
                     <td className="py-3 px-4 text-gray-700">{Number(cp.discountPercent).toFixed(0)}%</td>
-                    <td className="py-3 px-4 text-gray-700">{cp.stockCap ?? "—"}</td>
+                    <td className="py-3 px-4 text-gray-700">
+                      {cp.stockCap != null ? (
+                        <span className={cp.soldCount >= cp.stockCap ? "font-medium text-red-600" : ""}>
+                          {cp.soldCount} / {cp.stockCap}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">{cp.soldCount} sold</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handleRemoveProduct(cp.productId)}
