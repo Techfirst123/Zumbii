@@ -14,10 +14,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { SellersService } from './sellers.service';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { Role } from '@prisma/client';
 
 @ApiTags('Sellers')
 @Controller('sellers')
@@ -70,32 +67,5 @@ export class SellersController {
   @ApiOperation({ summary: 'Get seller by ID' })
   findOne(@Param('id') id: string) {
     return this.sellersService.findOne(id);
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Put(':id/verify')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Verify seller' })
-  verify(@Param('id') id: string) {
-    return this.sellersService.verify(id);
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Put(':id/reject')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Reject seller' })
-  reject(@Param('id') id: string, @Body('reason') reason: string) {
-    return this.sellersService.reject(id, reason);
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Put(':id/suspend')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Suspend seller' })
-  suspend(@Param('id') id: string) {
-    return this.sellersService.suspend(id);
   }
 }

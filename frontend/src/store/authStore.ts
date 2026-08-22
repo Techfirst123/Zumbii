@@ -25,5 +25,3 @@ export const useAuthStore = create<AuthState>()(
     { name: 'zumbii-auth' }
   )
 );
-
-export const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'SELLER'];

@@ -106,8 +106,8 @@ export class UploadController {
 
   @Post('product')
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.SELLER)
-  @ApiOperation({ summary: 'Upload product image' })
+  @Roles(Role.SELLER)
+  @ApiOperation({ summary: 'Upload product image (marketplace sellers)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('file', {

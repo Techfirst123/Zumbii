@@ -77,8 +77,6 @@ export default function Navbar() {
   const cartCount = useCartStore((s) => s.totalItems());
   const displayedCartCount = mounted ? cartCount : 0;
 
-  if (pathname?.startsWith('/admin')) return null;
-
   return (
     <div className="fixed inset-x-0 top-0 z-40">
       <div className="bg-zumbii-950 py-1.5 text-center text-[11px] font-medium text-gold-400 sm:text-xs">

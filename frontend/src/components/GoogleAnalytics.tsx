@@ -1,16 +1,10 @@
 "use client";
 
 import Script from "next/script";
-import { usePathname } from "next/navigation";
 
 const GA_MEASUREMENT_ID = "G-YB1HQ6NFZD";
 
 export default function GoogleAnalytics() {
-  const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith("/admin");
-
-  if (isAdminRoute) return null;
-
   return (
     <>
       <Script

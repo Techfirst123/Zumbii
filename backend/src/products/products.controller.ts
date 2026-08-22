@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Put,
-  Delete,
   Body,
   Param,
   Query,
@@ -15,7 +14,6 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
-import { BulkCreateProductDto } from './dto/bulk-create-product.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -27,21 +25,12 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.SELLER)
+  @Roles(Role.SELLER)
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new product' })
+  @ApiOperation({ summary: 'Create a new product (marketplace sellers)' })
   create(@Body() dto: CreateProductDto) {
     return this.productsService.create(dto);
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.SELLER)
-  @Post('bulk')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Bulk create products (e.g. from a spreadsheet import)' })
-  bulkCreate(@Body() dto: BulkCreateProductDto) {
-    return this.productsService.bulkCreate(dto.items);
   }
 
   @Public()
@@ -82,20 +71,11 @@ export class ProductsController {
   }
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.SELLER)
+  @Roles(Role.SELLER)
   @Put(':id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a product' })
+  @ApiOperation({ summary: 'Update a product (marketplace sellers)' })
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
-  }
-
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Delete(':id')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a product' })
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(id);
   }
 }

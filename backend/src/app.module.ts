@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminAuthModule } from './admin-auth/admin-auth.module';
+import { AdminStaffModule } from './admin-staff/admin-staff.module';
+import { AuditModule } from './audit/audit.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -18,8 +23,19 @@ import { OtpModule } from './otp/otp.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        // Generous default for public storefront traffic.
+        { name: 'default', ttl: 60000, limit: 120 },
+        // Much stricter bucket, applied per-route with @Throttle() on admin auth endpoints.
+        { name: 'admin-auth', ttl: 300000, limit: 5 },
+      ],
+    }),
     PrismaModule,
     AuthModule,
+    AdminAuthModule,
+    AdminStaffModule,
+    AuditModule,
     UsersModule,
     ProductsModule,
     CategoriesModule,
@@ -33,5 +49,6 @@ import { OtpModule } from './otp/otp.module';
     DeliveryModule,
     OtpModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

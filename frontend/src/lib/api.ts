@@ -259,24 +259,9 @@ export const deliveryApi = {
 
 export const categoriesApi = {
   list: () => api.get<BackendCategory[]>('/categories', { auth: false }),
-  listAdmin: () => api.get<BackendCategory[]>('/categories/admin/all'),
   getBySlug: (slug: string) =>
     api.get<BackendCategory>(`/categories/slug/${slug}`, { auth: false }),
-  create: (payload: Record<string, unknown>) =>
-    api.post<BackendCategory>('/categories', payload),
-  update: (id: string, payload: Record<string, unknown>) =>
-    api.put<BackendCategory>(`/categories/${id}`, payload),
-  remove: (id: string) => api.delete<{ message: string }>(`/categories/${id}`),
 };
-
-export interface BulkCreateResult {
-  created: number;
-  failed: number;
-  results: Array<
-    | { index: number; success: true; product: BackendProduct }
-    | { index: number; success: false; error: string }
-  >;
-}
 
 export const productsApi = {
   list: (query: ProductQuery = {}) =>
@@ -286,13 +271,6 @@ export const productsApi = {
     api.get<BackendProduct>(`/products/slug/${slug}`, { auth: false }),
   getRelated: (id: string) =>
     api.get<BackendProduct[]>(`/products/${id}/related`, { auth: false }),
-  create: (payload: Record<string, unknown>) =>
-    api.post<BackendProduct>('/products', payload),
-  bulkCreate: (items: Record<string, unknown>[]) =>
-    api.post<BulkCreateResult>('/products/bulk', { items }),
-  update: (id: string, payload: Record<string, unknown>) =>
-    api.put<BackendProduct>(`/products/${id}`, payload),
-  remove: (id: string) => api.delete<{ message: string }>(`/products/${id}`),
 };
 
 export type CampaignType =
@@ -334,57 +312,8 @@ export interface BackendCampaign {
   _count?: { products: number };
 }
 
-export interface CampaignListResponse {
-  data: BackendCampaign[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface CampaignQuery {
-  search?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface AttachCampaignProductItem {
-  productId: string;
-  campaignPrice?: number;
-  discountPercent?: number;
-  stockCap?: number;
-}
-
-export interface CampaignAttachResult {
-  attached: BackendCampaignProduct[];
-  warnings: string[];
-}
-
 export const campaignsApi = {
-  list: (query: CampaignQuery = {}) =>
-    api.get<CampaignListResponse>(`/campaigns${toQueryString(query)}`),
-  get: (id: string) => api.get<BackendCampaign>(`/campaigns/${id}`),
   getBySlug: (slug: string) =>
     api.get<BackendCampaign>(`/campaigns/slug/${slug}`, { auth: false }),
   homepage: () => api.get<BackendCampaign[]>('/campaigns/homepage', { auth: false }),
-  create: (payload: Record<string, unknown>) =>
-    api.post<BackendCampaign>('/campaigns', payload),
-  update: (id: string, payload: Record<string, unknown>) =>
-    api.put<BackendCampaign>(`/campaigns/${id}`, payload),
-  remove: (id: string) => api.delete<{ message: string }>(`/campaigns/${id}`),
-  endEarly: (id: string) => api.put<BackendCampaign>(`/campaigns/${id}/end`, {}),
-  addProducts: (id: string, items: AttachCampaignProductItem[]) =>
-    api.post<CampaignAttachResult>(`/campaigns/${id}/products`, { items }),
-  removeProduct: (id: string, productId: string) =>
-    api.delete<{ message: string }>(`/campaigns/${id}/products/${productId}`),
-};
-
-export const uploadApi = {
-  images: async (files: File[]): Promise<string[]> => {
-    const form = new FormData();
-    files.forEach((file) => form.append('files', file));
-    const res = await api.post<{ urls: string[] }>('/upload/images', form);
-    return res.urls;
-  },
 };

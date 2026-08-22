@@ -13,3 +13,7 @@ next-env.d.ts
 .vercel
 .env*
 backend/uploads/
+
+# admin-frontend is its own standalone git repository/Vercel project —
+# intentionally not tracked inside this monorepo.
+/admin-frontend/

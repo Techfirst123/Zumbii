@@ -4,9 +4,11 @@ const { ValidationPipe, VersioningType } = require('@nestjs/common');
 const { SwaggerModule, DocumentBuilder } = require('@nestjs/swagger');
 const { ExpressAdapter } = require('@nestjs/platform-express');
 const compression = require('compression');
+const cors = require('cors');
 const express = require('express');
 
 const { AppModule } = require('../dist/app.module');
+const { ADMIN_API_PATH_REGEX, corsOptionsFor } = require('../dist/common/cors.config');
 
 let cachedApp;
 
@@ -17,11 +19,11 @@ async function bootstrap() {
   const helmet = (await import('helmet')).default;
   app.use(helmet());
   app.use(compression());
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
-  });
+
+  // Keep in sync with src/main.ts: admin routes get their own tighter CORS
+  // policy, applied before the storefront-wide policy.
+  app.use(ADMIN_API_PATH_REGEX, cors(corsOptionsFor('admin')));
+  app.enableCors(corsOptionsFor('storefront'));
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

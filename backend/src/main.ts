@@ -4,7 +4,9 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
+import * as cors from 'cors';
 import { AppModule } from './app.module';
+import { ADMIN_API_PATH_REGEX, corsOptionsFor } from './common/cors.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -14,11 +16,13 @@ async function bootstrap() {
 
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
-  });
+
+  // Admin routes get their own, tighter CORS policy (only the admin subdomain),
+  // applied before the storefront-wide policy so a browser request to /admin/*
+  // from the public site's origin is rejected regardless of what code the
+  // storefront bundle ships.
+  app.use(ADMIN_API_PATH_REGEX, cors(corsOptionsFor('admin')));
+  app.enableCors(corsOptionsFor('storefront'));
 
   app.useGlobalPipes(
     new ValidationPipe({

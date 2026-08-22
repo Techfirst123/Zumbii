@@ -75,6 +75,52 @@ enum CampaignStatus {
   ENDED
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  ORDER_MANAGER
+  CATALOGUE_MANAGER
+  FRANCHISE_MANAGER
+}
+
+model AdminUser {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  name             String
+  role             AdminRole @default(ORDER_MANAGER)
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  refreshToken     String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  auditLogs        AuditLog[]
+
+  @@map("admin_users")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  adminUserId String?
+  adminEmail  String
+  action      String
+  method      String
+  path        String
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  ip          String?
+  createdAt   DateTime  @default(now())
+
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  @@index([adminUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
