@@ -16,6 +16,14 @@ function formatVariantLabel(optionValues: unknown): string | undefined {
   return entries.map(([, value]) => value).join(' / ');
 }
 
+const SHIPPING_RATES: Record<string, number> = {
+  standard: 49,
+  express: 149,
+  sameday: 299,
+};
+const DEFAULT_SHIPPING_METHOD = 'standard';
+const GST_RATE = 0.12;
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -159,9 +167,9 @@ export class OrdersService {
       });
     }
 
-    const shippingCost = subtotal > 100 ? 0 : 9.99;
-    const taxRate = 0.08;
-    const taxAmount = (subtotal - discountAmount) * taxRate;
+    const shippingMethod = dto.shippingMethod ?? DEFAULT_SHIPPING_METHOD;
+    const shippingCost = SHIPPING_RATES[shippingMethod] ?? SHIPPING_RATES[DEFAULT_SHIPPING_METHOD];
+    const taxAmount = Math.round((subtotal - discountAmount) * GST_RATE);
     const total = subtotal - discountAmount + shippingCost + taxAmount;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -172,6 +180,7 @@ export class OrdersService {
         userId,
         addressId: dto.addressId,
         subtotal,
+        shippingMethod,
         shippingCost,
         taxAmount,
         discountAmount,

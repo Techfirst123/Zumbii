@@ -2,6 +2,7 @@ import {
   IsArray,
   IsString,
   IsOptional,
+  IsIn,
   ValidateNested,
   IsNumber,
   Min,
@@ -35,6 +36,11 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
+
+  @ApiPropertyOptional({ enum: ['standard', 'express', 'sameday'] })
+  @IsOptional()
+  @IsIn(['standard', 'express', 'sameday'])
+  shippingMethod?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

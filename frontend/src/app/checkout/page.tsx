@@ -249,6 +249,7 @@ function CheckoutPage() {
     try {
       const order = await ordersApi.create({
         addressId: selectedAddress,
+        shippingMethod: selectedShipping,
         items: cartItems.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,

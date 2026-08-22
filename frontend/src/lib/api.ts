@@ -392,6 +392,7 @@ export interface CreateOrderItemPayload {
 export interface CreateOrderPayload {
   addressId: string;
   items: CreateOrderItemPayload[];
+  shippingMethod?: string;
   couponCode?: string;
   notes?: string;
   giftMessage?: string;
@@ -416,6 +417,7 @@ export interface BackendOrder {
   status: string;
   paymentStatus: string;
   subtotal: number;
+  shippingMethod: string;
   shippingCost: number;
   taxAmount: number;
   discountAmount: number;
