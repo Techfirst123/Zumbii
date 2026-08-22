@@ -231,6 +231,7 @@ export interface AuthUser {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string | null;
   role: string;
 }
 
@@ -342,4 +343,93 @@ export const campaignsApi = {
   getBySlug: (slug: string) =>
     api.get<BackendCampaign>(`/campaigns/slug/${slug}`, { auth: false }),
   homepage: () => api.get<BackendCampaign[]>('/campaigns/homepage', { auth: false }),
+};
+
+// ---- Addresses ----
+
+export interface BackendAddress {
+  id: string;
+  userId: string;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+  lat?: number | null;
+  lng?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddressPayload {
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country?: string;
+  isDefault?: boolean;
+}
+
+export const addressApi = {
+  list: () => api.get<BackendAddress[]>('/users/me/addresses'),
+  create: (payload: AddressPayload) => api.post<BackendAddress>('/users/me/addresses', payload),
+  update: (id: string, payload: Partial<AddressPayload>) =>
+    api.put<BackendAddress>(`/users/me/addresses/${id}`, payload),
+  remove: (id: string) => api.delete<{ message: string }>(`/users/me/addresses/${id}`),
+};
+
+// ---- Orders ----
+
+export interface CreateOrderItemPayload {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+}
+
+export interface CreateOrderPayload {
+  addressId: string;
+  items: CreateOrderItemPayload[];
+  couponCode?: string;
+  notes?: string;
+  giftMessage?: string;
+}
+
+export interface BackendOrderItem {
+  id: string;
+  productId: string;
+  variantId?: string | null;
+  variantLabel?: string | null;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+  total: number;
+  image?: string | null;
+}
+
+export interface BackendOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  subtotal: number;
+  shippingCost: number;
+  taxAmount: number;
+  discountAmount: number;
+  total: number;
+  currency: string;
+  createdAt: string;
+  items: BackendOrderItem[];
+}
+
+export const ordersApi = {
+  create: (payload: CreateOrderPayload) => api.post<BackendOrder>('/orders', payload),
+  myOrders: (query: { page?: number; limit?: number } = {}) =>
+    api.get<{ data: BackendOrder[]; total: number; page: number; limit: number; totalPages: number }>(
+      `/orders/my${toQueryString(query)}`
+    ),
+  get: (id: string) => api.get<BackendOrder>(`/orders/${id}`),
 };

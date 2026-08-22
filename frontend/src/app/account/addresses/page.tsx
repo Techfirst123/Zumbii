@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,10 +13,8 @@ import {
   ArrowLeft,
   CheckCircle,
   CircleDot,
-  ChevronRight,
   X,
-  AlertCircle,
-  Star,
+  Loader2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -25,125 +23,125 @@ import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
+import { addressApi, ApiError, type BackendAddress, type AddressPayload } from '@/lib/api';
 
-interface Address {
-  id: string;
-  name: string;
-  phone: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  pincode: string;
-  isDefault: boolean;
-  type: 'home' | 'work' | 'other';
-}
-
-const initialAddresses: Address[] = [
-  {
-    id: 'a1',
-    name: 'Rahul Sharma',
-    phone: '+91 98765 43210',
-    line1: '42, Gandhi Nagar, Andheri East',
-    line2: 'Near Railway Station',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400069',
-    isDefault: true,
-    type: 'home',
-  },
-  {
-    id: 'a2',
-    name: 'Rahul Sharma',
-    phone: '+91 98765 43210',
-    line1: 'Suite 301, Tech Park, MG Road',
-    line2: 'Bellandur',
-    city: 'Bangalore',
-    state: 'Karnataka',
-    pincode: '560001',
-    isDefault: false,
-    type: 'work',
-  },
-];
-
-const emptyForm: Address = {
-  id: '',
-  name: '',
-  phone: '',
-  line1: '',
-  line2: '',
+const emptyForm: AddressPayload = {
+  label: 'Home',
+  street: '',
   city: '',
   state: '',
-  pincode: '',
+  zipCode: '',
+  country: 'IN',
   isDefault: false,
-  type: 'home',
 };
 
+function labelIcon(label: string) {
+  const l = label.toLowerCase();
+  if (l === 'home') return Home;
+  if (l === 'work') return Briefcase;
+  return MapPin;
+}
+
+function labelColorClasses(label: string) {
+  const l = label.toLowerCase();
+  if (l === 'home') return { bg: 'bg-violet-100', text: 'text-violet-600', chipBg: 'bg-violet-50', chipText: 'text-violet-600' };
+  if (l === 'work') return { bg: 'bg-amber-100', text: 'text-amber-600', chipBg: 'bg-amber-50', chipText: 'text-amber-600' };
+  return { bg: 'bg-sky-100', text: 'text-sky-600', chipBg: 'bg-sky-50', chipText: 'text-sky-600' };
+}
+
 function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(initialAddresses);
+  const [addresses, setAddresses] = useState<BackendAddress[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<Address>(emptyForm);
-  const [errors, setErrors] = useState<Partial<Record<keyof Address, string>>>({});
+  const [form, setForm] = useState<AddressPayload>(emptyForm);
+  const [errors, setErrors] = useState<Partial<Record<keyof AddressPayload, string>>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const isEditing = editingId !== null;
 
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      setAddresses(await addressApi.list());
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to load addresses');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof Address, string>> = {};
-    if (!form.name.trim()) newErrors.name = 'Name is required';
-    if (!form.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!form.line1.trim()) newErrors.line1 = 'Address line 1 is required';
+    const newErrors: Partial<Record<keyof AddressPayload, string>> = {};
+    if (!form.label.trim()) newErrors.label = 'Label is required';
+    if (!form.street.trim()) newErrors.street = 'Street address is required';
     if (!form.city.trim()) newErrors.city = 'City is required';
     if (!form.state.trim()) newErrors.state = 'State is required';
-    if (!/^\d{6}$/.test(form.pincode)) newErrors.pincode = 'Enter a valid 6-digit pincode';
+    if (!/^\d{6}$/.test(form.zipCode)) newErrors.zipCode = 'Enter a valid 6-digit pincode';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-
-    if (isEditing) {
-      setAddresses((prev) =>
-        prev.map((addr) => {
-          if (addr.id !== editingId) return addr;
-          return { ...form, id: editingId };
-        })
-      );
-      toast.success('Address updated successfully');
-    } else {
-      const newId = `a${Date.now()}`;
-      setAddresses((prev) => {
-        const updated = form.isDefault
-          ? prev.map((a) => ({ ...a, isDefault: false }))
-          : prev;
-        return [...updated, { ...form, id: newId }];
-      });
-      toast.success('Address added successfully');
+    setSaving(true);
+    try {
+      if (isEditing) {
+        await addressApi.update(editingId, form);
+        toast.success('Address updated successfully');
+      } else {
+        await addressApi.create(form);
+        toast.success('Address added successfully');
+      }
+      await load();
+      resetForm();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save address');
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
-  const handleEdit = (address: Address) => {
-    setForm(address);
+  const handleEdit = (address: BackendAddress) => {
+    setForm({
+      label: address.label,
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      zipCode: address.zipCode,
+      country: address.country,
+      isDefault: address.isDefault,
+    });
     setEditingId(address.id);
     setShowForm(true);
     setErrors({});
   };
 
-  const handleDelete = (id: string) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-    setDeleteConfirm(null);
-    toast.success('Address deleted');
+  const handleDelete = async (id: string) => {
+    try {
+      await addressApi.remove(id);
+      toast.success('Address deleted');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to delete address');
+    } finally {
+      setDeleteConfirm(null);
+    }
   };
 
-  const handleSetDefault = (id: string) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({ ...a, isDefault: a.id === id }))
-    );
-    toast.success('Default address updated');
+  const handleSetDefault = async (address: BackendAddress) => {
+    try {
+      await addressApi.update(address.id, { isDefault: true });
+      toast.success('Default address updated');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update default address');
+    }
   };
 
   const resetForm = () => {
@@ -213,35 +211,41 @@ function AddressesPage() {
               </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
-                <Input
-                  label="Full Name"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  error={errors.name}
-                  placeholder="Rahul Sharma"
-                />
-                <Input
-                  label="Phone Number"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  error={errors.phone}
-                  placeholder="+91 98765 43210"
-                />
                 <div className="sm:col-span-2">
-                  <Input
-                    label="Address Line 1"
-                    value={form.line1}
-                    onChange={(e) => setForm({ ...form, line1: e.target.value })}
-                    error={errors.line1}
-                    placeholder="House / Flat / Building / Street"
-                  />
+                  <label className="block text-sm font-medium text-text-primary mb-1.5">Label</label>
+                  <div className="flex gap-2">
+                    {(['Home', 'Work', 'Other'] as const).map((label) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => setForm({ ...form, label })}
+                        className={clsx(
+                          'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all',
+                          form.label === label
+                            ? 'border-zumbii-600 bg-zumbii-50 text-zumbii-600'
+                            : 'border-border text-text-secondary hover:border-zumbii-200'
+                        )}
+                      >
+                        {label === 'Home' ? (
+                          <Home className="w-3.5 h-3.5" />
+                        ) : label === 'Work' ? (
+                          <Briefcase className="w-3.5 h-3.5" />
+                        ) : (
+                          <MapPin className="w-3.5 h-3.5" />
+                        )}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.label && <p className="text-xs text-red-500 mt-1">{errors.label}</p>}
                 </div>
                 <div className="sm:col-span-2">
                   <Input
-                    label="Address Line 2 (Optional)"
-                    value={form.line2}
-                    onChange={(e) => setForm({ ...form, line2: e.target.value })}
-                    placeholder="Landmark / Area / Sector"
+                    label="Street Address"
+                    value={form.street}
+                    onChange={(e) => setForm({ ...form, street: e.target.value })}
+                    error={errors.street}
+                    placeholder="House / Flat / Building / Street / Landmark"
                   />
                 </div>
                 <Input
@@ -260,38 +264,11 @@ function AddressesPage() {
                 />
                 <Input
                   label="Pincode"
-                  value={form.pincode}
-                  onChange={(e) => setForm({ ...form, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
-                  error={errors.pincode}
+                  value={form.zipCode}
+                  onChange={(e) => setForm({ ...form, zipCode: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                  error={errors.zipCode}
                   placeholder="400069"
                 />
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1.5">Address Type</label>
-                  <div className="flex gap-2">
-                    {(['home', 'work', 'other'] as const).map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setForm({ ...form, type })}
-                        className={clsx(
-                          'flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all',
-                          form.type === type
-                            ? 'border-zumbii-600 bg-zumbii-50 text-zumbii-600'
-                            : 'border-border text-text-secondary hover:border-zumbii-200'
-                        )}
-                      >
-                        {type === 'home' ? (
-                          <Home className="w-3.5 h-3.5" />
-                        ) : type === 'work' ? (
-                          <Briefcase className="w-3.5 h-3.5" />
-                        ) : (
-                          <MapPin className="w-3.5 h-3.5" />
-                        )}
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               <label className="flex items-center gap-2.5 mt-5 cursor-pointer">
@@ -314,7 +291,7 @@ function AddressesPage() {
                 <Button variant="ghost" size="md" onClick={resetForm}>
                   Cancel
                 </Button>
-                <Button size="md" onClick={handleSave}>
+                <Button size="md" onClick={handleSave} loading={saving}>
                   {isEditing ? 'Update Address' : 'Save Address'}
                 </Button>
               </div>
@@ -322,7 +299,12 @@ function AddressesPage() {
           </motion.div>
         )}
 
-        {addresses.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-20 text-text-tertiary text-sm">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Loading addresses...
+          </div>
+        ) : addresses.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -346,96 +328,73 @@ function AddressesPage() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
-              {addresses.map((address) => (
-                <motion.div
-                  key={address.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card hover={false}>
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div
-                            className={clsx(
-                              'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-                              address.type === 'home'
-                                ? 'bg-violet-100'
-                                : address.type === 'work'
-                                ? 'bg-amber-100'
-                                : 'bg-sky-100'
-                            )}
-                          >
-                            {address.type === 'home' ? (
-                              <Home className="w-5 h-5 text-violet-600" />
-                            ) : address.type === 'work' ? (
-                              <Briefcase className="w-5 h-5 text-amber-600" />
-                            ) : (
-                              <MapPin className="w-5 h-5 text-sky-600" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-text-primary text-sm">{address.name}</span>
-                              {address.isDefault && (
-                                <Badge variant="default" size="sm">Default</Badge>
-                              )}
-                              <div className={clsx(
-                                'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium',
-                                address.type === 'home'
-                                  ? 'bg-violet-50 text-violet-600'
-                                  : address.type === 'work'
-                                  ? 'bg-amber-50 text-amber-600'
-                                  : 'bg-sky-50 text-sky-600'
-                              )}>
-                                {address.type.charAt(0).toUpperCase() + address.type.slice(1)}
-                              </div>
+              {addresses.map((address) => {
+                const Icon = labelIcon(address.label);
+                const colors = labelColorClasses(address.label);
+                return (
+                  <motion.div
+                    key={address.id}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Card hover={false}>
+                      <div className="p-4 sm:p-5">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', colors.bg)}>
+                              <Icon className={clsx('w-5 h-5', colors.text)} />
                             </div>
-                            <p className="text-sm text-text-secondary mt-1">
-                              {address.line1}
-                              {address.line2 && <>, {address.line2}</>}
-                            </p>
-                            <p className="text-sm text-text-secondary">
-                              {address.city}, {address.state} - {address.pincode}
-                            </p>
-                            <p className="text-sm text-text-secondary mt-0.5">Phone: {address.phone}</p>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {address.isDefault && (
+                                  <Badge variant="default" size="sm">Default</Badge>
+                                )}
+                                <div className={clsx('flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium', colors.chipBg, colors.chipText)}>
+                                  {address.label}
+                                </div>
+                              </div>
+                              <p className="text-sm text-text-secondary mt-1">{address.street}</p>
+                              <p className="text-sm text-text-secondary">
+                                {address.city}, {address.state} - {address.zipCode}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 ml-2">
+                            <button
+                              onClick={() => handleEdit(address)}
+                              className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
+                              aria-label="Edit address"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirm(address.id)}
+                              className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
+                              aria-label="Delete address"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0 ml-2">
-                          <button
-                            onClick={() => handleEdit(address)}
-                            className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
-                            aria-label="Edit address"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirm(address.id)}
-                            className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
-                            aria-label="Delete address"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
                         {!address.isDefault && (
-                          <button
-                            onClick={() => handleSetDefault(address.id)}
-                            className="text-xs font-medium text-zumbii-600 hover:text-zumbii-700 flex items-center gap-1"
-                          >
-                            <CircleDot className="w-3.5 h-3.5" />
-                            Set as Default
-                          </button>
+                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                            <button
+                              onClick={() => handleSetDefault(address)}
+                              className="text-xs font-medium text-zumbii-600 hover:text-zumbii-700 flex items-center gap-1"
+                            >
+                              <CircleDot className="w-3.5 h-3.5" />
+                              Set as Default
+                            </button>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}

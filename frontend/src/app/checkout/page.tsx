@@ -34,6 +34,7 @@ import {
   Pencil,
   Trash2,
   Star,
+  AlertCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -43,51 +44,20 @@ import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
+import { addressApi, ordersApi, ApiError, type BackendAddress, type AddressPayload } from '@/lib/api';
 
 type Step = 'address' | 'shipping' | 'payment' | 'review';
 
-interface AddressForm {
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  name: string;
-  type: 'home' | 'work' | 'other';
-}
-
-interface SavedAddress extends AddressForm {
-  id: string;
-  isDefault: boolean;
-}
-
-const savedAddresses: SavedAddress[] = [
-  {
-    id: 'a1',
-    name: 'Rahul Sharma',
-    phone: '+91 98765 43210',
-    line1: '42, Gandhi Nagar, Andheri East',
-    line2: 'Near Railway Station',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400069',
-    isDefault: true,
-    type: 'home',
-  },
-  {
-    id: 'a2',
-    name: 'Rahul Sharma',
-    phone: '+91 98765 43210',
-    line1: 'Suite 301, Tech Park, MG Road',
-    line2: '',
-    city: 'Bangalore',
-    state: 'Karnataka',
-    pincode: '560001',
-    isDefault: false,
-    type: 'work',
-  },
-];
+const emptyAddressForm: AddressPayload = {
+  label: 'Home',
+  street: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: 'IN',
+  isDefault: false,
+};
 
 const shippingMethods = [
   {
@@ -137,8 +107,11 @@ function CheckoutPage() {
   const cartItems = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clear);
+  const authUser = useAuthStore((s) => s.user);
   const [currentStep, setCurrentStep] = useState<Step>('address');
-  const [selectedAddress, setSelectedAddress] = useState<string>('a1');
+  const [addresses, setAddresses] = useState<BackendAddress[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [selectedShipping, setSelectedShipping] = useState('express');
@@ -148,20 +121,12 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [placeOrderError, setPlaceOrderError] = useState('');
   const [showFullSummary, setShowFullSummary] = useState(false);
 
-  const [newAddress, setNewAddress] = useState<AddressForm>({
-    line1: '',
-    line2: '',
-    city: '',
-    state: '',
-    pincode: '',
-    phone: '',
-    name: '',
-    type: 'home',
-  });
+  const [newAddress, setNewAddress] = useState<AddressPayload>(emptyAddressForm);
 
-  const [errors, setErrors] = useState<Partial<Record<keyof AddressForm, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof AddressPayload, string>>>({});
 
   const stepIndex = steps.findIndex((s) => s.id === currentStep);
   const shippingCost = shippingMethods.find((s) => s.id === selectedShipping)?.price ?? 0;
@@ -174,6 +139,29 @@ function CheckoutPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems.length, orderPlaced]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAddresses() {
+      setAddressesLoading(true);
+      try {
+        const list = await addressApi.list();
+        if (cancelled) return;
+        setAddresses(list);
+        const preferred = list.find((a) => a.isDefault) ?? list[0];
+        if (preferred) setSelectedAddress(preferred.id);
+        else setShowAddressForm(true);
+      } catch (err) {
+        if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Failed to load addresses');
+      } finally {
+        if (!cancelled) setAddressesLoading(false);
+      }
+    }
+    loadAddresses();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const canProceed = () => {
     if (currentStep === 'address') return !!selectedAddress;
@@ -217,40 +205,67 @@ function CheckoutPage() {
     }
   };
 
+  const [savingAddress, setSavingAddress] = useState(false);
+
   const validateAddressForm = () => {
-    const newErrors: Partial<Record<keyof AddressForm, string>> = {};
-    if (!newAddress.name.trim()) newErrors.name = 'Name is required';
-    if (!newAddress.phone.trim()) newErrors.phone = 'Phone is required';
-    if (!newAddress.line1.trim()) newErrors.line1 = 'Address is required';
+    const newErrors: Partial<Record<keyof AddressPayload, string>> = {};
+    if (!newAddress.street.trim()) newErrors.street = 'Address is required';
     if (!newAddress.city.trim()) newErrors.city = 'City is required';
     if (!newAddress.state.trim()) newErrors.state = 'State is required';
-    if (!/^\d{6}$/.test(newAddress.pincode)) newErrors.pincode = 'Enter valid 6-digit pincode';
+    if (!/^\d{6}$/.test(newAddress.zipCode)) newErrors.zipCode = 'Enter valid 6-digit pincode';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSaveAddress = () => {
+  const handleSaveAddress = async () => {
     if (!validateAddressForm()) return;
-    saveAddress();
-  };
-
-  const saveAddress = () => {
-    toast.success('Address saved successfully');
-    setShowAddressForm(false);
-    setEditingAddress(null);
-    setNewAddress({ line1: '', line2: '', city: '', state: '', pincode: '', phone: '', name: '', type: 'home' });
-    setErrors({});
+    setSavingAddress(true);
+    try {
+      const saved = editingAddress
+        ? await addressApi.update(editingAddress, newAddress)
+        : await addressApi.create(newAddress);
+      const list = await addressApi.list();
+      setAddresses(list);
+      setSelectedAddress(saved.id);
+      toast.success('Address saved successfully');
+      setShowAddressForm(false);
+      setEditingAddress(null);
+      setNewAddress(emptyAddressForm);
+      setErrors({});
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save address');
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      toast.error('Please select a delivery address');
+      return;
+    }
     setPlacing(true);
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    setPlacing(false);
-    setOrderPlaced(true);
-    const num = `ZUM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    setOrderNumber(num);
-    clearCart();
-    toast.success('Order placed successfully!');
+    setPlaceOrderError('');
+    try {
+      const order = await ordersApi.create({
+        addressId: selectedAddress,
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        })),
+      });
+      setOrderPlaced(true);
+      setOrderNumber(order.orderNumber);
+      clearCart();
+      toast.success('Order placed successfully!');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to place order. Please try again.';
+      setPlaceOrderError(message);
+      toast.error(message);
+    } finally {
+      setPlacing(false);
+    }
   };
 
   const renderProgressBar = () => (
@@ -338,16 +353,26 @@ function CheckoutPage() {
           variant="outline"
           size="sm"
           className="shrink-0"
-          onClick={() => { setShowAddressForm(true); setEditingAddress(null); setNewAddress({ line1: '', line2: '', city: '', state: '', pincode: '', phone: '', name: '', type: 'home' }); }}
+          onClick={() => { setShowAddressForm(true); setEditingAddress(null); setNewAddress(emptyAddressForm); setErrors({}); }}
         >
           <Plus className="w-4 h-4" />
           Add New
         </Button>
       </div>
 
-      {!showAddressForm ? (
+      {addressesLoading ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-text-tertiary text-sm">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          Loading addresses...
+        </div>
+      ) : !showAddressForm ? (
         <div className="space-y-3">
-          {savedAddresses.map((addr) => (
+          {addresses.length === 0 && (
+            <p className="text-sm text-text-tertiary mb-2">
+              No saved addresses yet — add one below to continue.
+            </p>
+          )}
+          {addresses.map((addr) => (
             <label
               key={addr.id}
               className={clsx(
@@ -356,6 +381,7 @@ function CheckoutPage() {
                   ? 'border-zumbii-600 bg-zumbii-50 shadow-md shadow-zumbii-600/10'
                   : 'border-border bg-surface hover:border-zumbii-200 hover:bg-zumbii-50/50'
               )}
+              onClick={() => setSelectedAddress(addr.id)}
             >
               <div className="flex items-start gap-3">
                 <div
@@ -368,24 +394,40 @@ function CheckoutPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-text-primary text-sm">{addr.name}</span>
+                    {authUser?.firstName && (
+                      <span className="font-semibold text-text-primary text-sm">
+                        {authUser.firstName} {authUser.lastName}
+                      </span>
+                    )}
                     {addr.isDefault && <Badge variant="default" size="sm">Default</Badge>}
-                    <div className={clsx(
-                      'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium',
-                      addr.type === 'home' ? 'bg-zumbii-50 text-zumbii-700' : 'bg-gold-100 text-gold-800'
-                    )}>
-                      {addr.type === 'home' ? <Home className="w-3 h-3" /> : <Briefcase className="w-3 h-3" />}
-                      {addr.type}
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-zumbii-50 text-zumbii-700">
+                      {addr.label.toLowerCase() === 'home' ? <Home className="w-3 h-3" /> : addr.label.toLowerCase() === 'work' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
+                      {addr.label}
                     </div>
                   </div>
-                  <p className="text-sm text-text-secondary mt-1">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
-                  <p className="text-sm text-text-secondary">{addr.city}, {addr.state} - {addr.pincode}</p>
-                  <p className="text-sm text-text-secondary mt-0.5">Phone: {addr.phone}</p>
+                  <p className="text-sm text-text-secondary mt-1">{addr.street}</p>
+                  <p className="text-sm text-text-secondary">{addr.city}, {addr.state} - {addr.zipCode}</p>
+                  {authUser?.phone && (
+                    <p className="text-sm text-text-secondary mt-0.5">Phone: {authUser.phone}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); toast.success('Address editing coming soon'); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setEditingAddress(addr.id);
+                      setNewAddress({
+                        label: addr.label,
+                        street: addr.street,
+                        city: addr.city,
+                        state: addr.state,
+                        zipCode: addr.zipCode,
+                        country: addr.country,
+                        isDefault: addr.isDefault,
+                      });
+                      setShowAddressForm(true);
+                    }}
                     className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
                     aria-label="Edit address"
                   >
@@ -409,34 +451,29 @@ function CheckoutPage() {
             </button>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Input label="Full Name" value={newAddress.name} onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })} error={errors.name} placeholder="Rahul Sharma" />
-            <Input label="Phone Number" value={newAddress.phone} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} error={errors.phone} placeholder="+91 98765 43210" />
             <div className="sm:col-span-2">
-              <Input label="Address Line 1" value={newAddress.line1} onChange={(e) => setNewAddress({ ...newAddress, line1: e.target.value })} error={errors.line1} placeholder="House / Flat / Building" />
-            </div>
-            <div className="sm:col-span-2">
-              <Input label="Address Line 2 (Optional)" value={newAddress.line2} onChange={(e) => setNewAddress({ ...newAddress, line2: e.target.value })} placeholder="Landmark / Area" />
+              <Input label="Street Address" value={newAddress.street} onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })} error={errors.street} placeholder="House / Flat / Building / Street / Landmark" />
             </div>
             <Input label="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} error={errors.city} placeholder="Mumbai" />
             <Input label="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} error={errors.state} placeholder="Maharashtra" />
-            <Input label="Pincode" value={newAddress.pincode} onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })} error={errors.pincode} placeholder="400069" />
+            <Input label="Pincode" value={newAddress.zipCode} onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value.replace(/\D/g, '').slice(0, 6) })} error={errors.zipCode} placeholder="400069" />
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">Address Type</label>
               <div className="flex flex-wrap gap-2">
-                {(['home', 'work', 'other'] as const).map((type) => (
+                {(['Home', 'Work', 'Other'] as const).map((label) => (
                   <button
-                    key={type}
+                    key={label}
                     type="button"
-                    onClick={() => setNewAddress({ ...newAddress, type })}
+                    onClick={() => setNewAddress({ ...newAddress, label })}
                     className={clsx(
                       'flex min-h-11 items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium border transition-all',
-                      newAddress.type === type
+                      newAddress.label === label
                         ? 'border-zumbii-600 bg-zumbii-50 text-zumbii-600'
                         : 'border-border text-text-secondary hover:border-zumbii-200'
                     )}
                   >
-                    {type === 'home' ? <Home className="w-3.5 h-3.5" /> : type === 'work' ? <Briefcase className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                    {label === 'Home' ? <Home className="w-3.5 h-3.5" /> : label === 'Work' ? <Briefcase className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -444,7 +481,7 @@ function CheckoutPage() {
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="ghost" size="md" onClick={() => { setShowAddressForm(false); setErrors({}); }}>Cancel</Button>
-            <Button size="md" onClick={handleSaveAddress}>Save Address</Button>
+            <Button size="md" onClick={handleSaveAddress} loading={savingAddress}>Save Address</Button>
           </div>
         </Card>
       )}
@@ -636,7 +673,7 @@ function CheckoutPage() {
   );
 
   const renderReviewStep = () => {
-    const address = savedAddresses.find((a) => a.id === selectedAddress);
+    const address = addresses.find((a) => a.id === selectedAddress);
     const shipping = shippingMethods.find((s) => s.id === selectedShipping);
     const payment = paymentMethods.find((p) => p.id === selectedPayment);
 
@@ -666,10 +703,12 @@ function CheckoutPage() {
             </div>
             {address && (
               <div className="text-sm text-text-secondary">
-                <p className="font-medium text-text-primary">{address.name}</p>
-                <p>{address.line1}{address.line2 ? `, ${address.line2}` : ''}</p>
-                <p>{address.city}, {address.state} - {address.pincode}</p>
-                <p>Phone: {address.phone}</p>
+                {authUser?.firstName && (
+                  <p className="font-medium text-text-primary">{authUser.firstName} {authUser.lastName}</p>
+                )}
+                <p>{address.street}</p>
+                <p>{address.city}, {address.state} - {address.zipCode}</p>
+                {authUser?.phone && <p>Phone: {authUser.phone}</p>}
               </div>
             )}
           </Card>
@@ -902,6 +941,13 @@ function CheckoutPage() {
               {currentStep === 'payment' && renderPaymentStep()}
               {currentStep === 'review' && renderReviewStep()}
             </AnimatePresence>
+
+            {currentStep === 'review' && placeOrderError && (
+              <div className="mt-4 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{placeOrderError}</span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
               <Button
