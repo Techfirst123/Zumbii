@@ -177,8 +177,8 @@ export default function CategoriesPage() {
               variants={containerVariants}
               className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5"
             >
-              {filtered.map((cat, i) => {
-                const { icon: Icon, gradient } = categoryVisual(i);
+              {filtered.map((cat) => {
+                const { icon: Icon, gradient } = categoryVisual(cat.name || cat.slug);
                 return (
                   <motion.div key={cat.id} variants={cardVariants}>
                     <Link

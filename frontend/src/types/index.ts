@@ -11,6 +11,27 @@ export interface User {
 
 export type UserRole = 'customer' | 'business' | 'manufacturer' | 'supplier' | 'distributor' | 'retailer' | 'wholesaler' | 'franchise' | 'delivery' | 'warehouse' | 'admin';
 
+export interface VariantOptionValue {
+  label: string;
+  swatch?: string;
+}
+
+export interface VariantOptionType {
+  name: string;
+  values: VariantOptionValue[];
+}
+
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  price: number;
+  comparePrice?: number | null;
+  quantity: number;
+  images: string[];
+  optionValues: Record<string, string>;
+  isActive: boolean;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -42,6 +63,8 @@ export interface Product {
   status: 'active' | 'inactive' | 'draft';
   createdAt: string;
   updatedAt: string;
+  variantOptions?: VariantOptionType[];
+  variants?: ProductVariant[];
   activeCampaign?: {
     campaignId: string;
     campaignName: string;
@@ -111,6 +134,9 @@ export interface Review {
 
 export interface CartItem {
   productId: string;
+  variantId?: string;
+  variantLabel?: string;
+  sku?: string;
   slug: string;
   name: string;
   image: string;

@@ -31,6 +31,7 @@ import clsx from 'clsx';
 
 import type { Product } from '@/types';
 import { ProductCard } from '@/components/ui/ProductCard';
+import { QuickViewModal } from '@/components/product/QuickViewModal';
 import Button from '@/components/ui/Button';
 import { productsApi, categoriesApi, ApiError } from '@/lib/api';
 import { mapBackendProduct } from '@/lib/adapters';
@@ -84,6 +85,7 @@ function MarketplaceContent() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   const sortRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -649,11 +651,11 @@ function MarketplaceContent() {
                     {paginatedProducts.map((product) =>
                       viewMode === 'grid' ? (
                         <motion.div key={product.id} variants={fadeIn}>
-                          <ProductCard product={product} />
+                          <ProductCard product={product} onQuickView={setQuickViewProduct} />
                         </motion.div>
                       ) : (
                         <motion.div key={product.id} variants={listVariants}>
-                          <ProductCard product={product} className="flex-row! [&>a]:flex! [&>a]:flex-row! [&_.aspect-square]:w-28! [&_.aspect-square]:h-28! sm:[&_.aspect-square]:w-48! sm:[&_.aspect-square]:h-48!" />
+                          <ProductCard product={product} onQuickView={setQuickViewProduct} className="flex-row! [&>a]:flex! [&>a]:flex-row! [&_.aspect-square]:w-28! [&_.aspect-square]:h-28! sm:[&_.aspect-square]:w-48! sm:[&_.aspect-square]:h-48!" />
                         </motion.div>
                       )
                     )}
@@ -804,6 +806,8 @@ function MarketplaceContent() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
     </>
   );
 }

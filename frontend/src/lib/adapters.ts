@@ -91,6 +91,17 @@ export function mapBackendProduct(p: BackendProduct): Product {
     status: p.isActive ? 'active' : 'inactive',
     createdAt,
     updatedAt: p.updatedAt ?? createdAt,
+    variantOptions: p.variantOptions ?? undefined,
+    variants: p.variants?.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      price: Number(v.price),
+      comparePrice: v.comparePrice ? Number(v.comparePrice) : undefined,
+      quantity: v.quantity,
+      images: v.images.map((img) => resolveImageUrl(img)),
+      optionValues: v.optionValues,
+      isActive: v.isActive,
+    })),
     activeCampaign: p.activeCampaign ?? null,
   };
 }

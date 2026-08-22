@@ -416,8 +416,8 @@ function CategoriesSection() {
           variants={staggerContainer}
           className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6"
         >
-          {categories.map((cat, i) => {
-            const { icon: IconComponent, gradient } = categoryVisual(i);
+          {categories.map((cat) => {
+            const { icon: IconComponent, gradient } = categoryVisual(cat.name || cat.slug);
             return (
               <motion.div key={cat.id} variants={fadeInUp}>
                 <Link

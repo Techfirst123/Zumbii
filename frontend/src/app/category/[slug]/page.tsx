@@ -17,6 +17,7 @@ import clsx from 'clsx';
 
 import type { Product } from '@/types';
 import { ProductCard } from '@/components/ui/ProductCard';
+import { QuickViewModal } from '@/components/product/QuickViewModal';
 import Container from '@/components/ui/container';
 import { categoriesApi, productsApi, ApiError, type BackendCategory } from '@/lib/api';
 import { mapBackendProduct } from '@/lib/adapters';
@@ -54,6 +55,7 @@ export default function CategoryDetailPage() {
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -247,11 +249,13 @@ export default function CategoryDetailPage() {
           >
             {products.map((product) => (
               <motion.div key={product.id} variants={fadeIn}>
-                <ProductCard product={product} />
+                <ProductCard product={product} onQuickView={setQuickViewProduct} />
               </motion.div>
             ))}
           </motion.div>
         )}
+
+        <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
 
         {!loading && totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-2">

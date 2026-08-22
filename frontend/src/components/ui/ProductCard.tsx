@@ -13,6 +13,7 @@ import { StarRating } from './StarRating';
 import { useCartStore } from '@/store/cartStore';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { trackEvent } from '@/lib/gtag';
+import { ProductImagePlaceholder, PLACEHOLDER_IMAGE_SENTINEL } from '@/components/product/ProductImagePlaceholder';
 
 interface ProductCardProps {
   product: Product;
@@ -27,6 +28,17 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
   const addItem = useCartStore((s) => s.addItem);
   const requireAuth = useRequireAuth();
 
+  const defaultVariant = product.variants?.length
+    ? [...product.variants].sort((a, b) => a.price - b.price).find((v) => v.quantity > 0) ??
+      product.variants[0]
+    : undefined;
+  const cardStock = defaultVariant ? defaultVariant.quantity : product.stock;
+
+  const cardImages = defaultVariant?.images.length ? defaultVariant.images : product.images;
+  const primaryImage = cardImages[0] || PLACEHOLDER_IMAGE_SENTINEL;
+  const secondaryImage = cardImages[1];
+  const isPlaceholderImage = primaryImage === PLACEHOLDER_IMAGE_SENTINEL;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     if (!requireAuth()) return;
@@ -36,15 +48,23 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
     }
     addItem({
       productId: product.id,
+      variantId: defaultVariant?.id,
+      variantLabel: defaultVariant ? Object.values(defaultVariant.optionValues).join(' / ') : undefined,
+      sku: defaultVariant?.sku ?? product.sku,
       slug: product.slug,
       name: product.name,
-      image: product.images[0] || '/placeholder.svg',
+      image: primaryImage,
       price: displayPrice,
       quantity: product.moq > 1 ? product.moq : 1,
-      maxQuantity: Math.max(product.stock, 1),
+      maxQuantity: Math.max(cardStock, 1),
       seller: product.seller?.businessName || '',
     });
   };
+
+  const priceRange = product.variants?.length
+    ? { min: Math.min(...product.variants.map((v) => v.price)), max: Math.max(...product.variants.map((v) => v.price)) }
+    : null;
+  const hasPriceRange = priceRange && priceRange.min !== priceRange.max;
 
   const discount =
     product.comparePrice && product.comparePrice > product.price
@@ -52,8 +72,9 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
       : 0;
 
   const campaign = product.activeCampaign;
-  const displayPrice = campaign ? campaign.campaignPrice : product.price;
-  const strikePrice = campaign ? product.price : product.comparePrice;
+  const basePrice = defaultVariant ? defaultVariant.price : product.price;
+  const displayPrice = campaign ? campaign.campaignPrice : basePrice;
+  const strikePrice = campaign ? basePrice : product.comparePrice;
 
   const hasBadge = product.isNew || product.isFeatured || discount > 0 || Boolean(campaign);
 
@@ -93,20 +114,27 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
     >
       <Link href={`/product/${product.slug}`} className="block" onClick={handlePromotionClick}>
         <div className="relative aspect-square overflow-hidden bg-surface-tertiary">
-          {!imageLoaded && (
-            <div className="absolute inset-0 animate-pulse bg-surface-tertiary" />
+          {isPlaceholderImage ? (
+            <ProductImagePlaceholder categoryName={product.category?.name} />
+          ) : (
+            <>
+              {!imageLoaded && (
+                <div className="absolute inset-0 animate-pulse bg-surface-tertiary" />
+              )}
+              <Image
+                src={isHovered && secondaryImage ? secondaryImage : primaryImage}
+                alt={product.name}
+                fill
+                className={clsx(
+                  'object-cover transition-transform duration-500',
+                  !secondaryImage && 'group-hover:scale-110',
+                  imageLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                onLoad={() => setImageLoaded(true)}
+              />
+            </>
           )}
-          <Image
-            src={product.images[0] || '/placeholder.svg'}
-            alt={product.name}
-            fill
-            className={clsx(
-              'object-cover transition-transform duration-500 group-hover:scale-110',
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            )}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            onLoad={() => setImageLoaded(true)}
-          />
 
           {hasBadge && (
             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
@@ -153,7 +181,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
                 Quick View
               </button>
             )}
-            {product.stock > 0 && (
+            {cardStock > 0 && (
               <button
                 type="button"
                 onClick={handleAddToCart}
@@ -189,13 +217,21 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
 
         <div className="flex items-baseline justify-between gap-1.5">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-base font-bold text-text-primary">
-              ₹{displayPrice.toLocaleString('en-IN')}
-            </span>
-            {strikePrice && strikePrice > displayPrice && (
-              <span className="text-xs text-text-tertiary line-through">
-                ₹{strikePrice.toLocaleString('en-IN')}
+            {hasPriceRange && !campaign ? (
+              <span className="text-base font-bold text-text-primary">
+                From ₹{priceRange!.min.toLocaleString('en-IN')}
               </span>
+            ) : (
+              <>
+                <span className="text-base font-bold text-text-primary">
+                  ₹{displayPrice.toLocaleString('en-IN')}
+                </span>
+                {strikePrice && strikePrice > displayPrice && (
+                  <span className="text-xs text-text-tertiary line-through">
+                    ₹{strikePrice.toLocaleString('en-IN')}
+                  </span>
+                )}
+              </>
             )}
           </div>
           {product.shortDescription && (
@@ -218,12 +254,12 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
               MOQ: {product.moq}
             </span>
           )}
-          {product.stock > 0 && product.stock <= 10 && (
+          {cardStock > 0 && cardStock <= 10 && (
             <span className="text-[11px] text-amber-600 font-medium">
-              Only {product.stock} left
+              Only {cardStock} left
             </span>
           )}
-          {product.stock === 0 && (
+          {cardStock === 0 && (
             <span className="text-[11px] text-red-500 font-medium">Out of stock</span>
           )}
         </div>

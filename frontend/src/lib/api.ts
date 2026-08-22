@@ -128,6 +128,30 @@ export interface BackendActiveCampaign {
   discountPercent: number;
 }
 
+export interface BackendVariantOptionValue {
+  label: string;
+  swatch?: string;
+}
+
+export interface BackendVariantOptionType {
+  name: string;
+  values: BackendVariantOptionValue[];
+}
+
+export interface BackendProductVariant {
+  id: string;
+  productId: string;
+  sku: string;
+  price: number;
+  comparePrice?: number | null;
+  costPrice?: number | null;
+  quantity: number;
+  images: string[];
+  optionValues: Record<string, string>;
+  isActive: boolean;
+  soldCount: number;
+}
+
 export interface BackendProduct {
   id: string;
   name: string;
@@ -157,6 +181,8 @@ export interface BackendProduct {
   brand?: { id: string; name: string; slug: string } | null;
   reviews?: BackendReview[];
   activeCampaign?: BackendActiveCampaign | null;
+  variantOptions?: BackendVariantOptionType[] | null;
+  variants?: BackendProductVariant[];
 }
 
 export interface BackendReview {

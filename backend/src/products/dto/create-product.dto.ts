@@ -4,9 +4,12 @@ import {
   IsOptional,
   IsArray,
   IsBoolean,
+  ValidateNested,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CreateVariantDto, VariantOptionTypeDto } from './product-variant.dto';
 
 export class CreateProductDto {
   @ApiProperty()
@@ -107,4 +110,18 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   metaDesc?: string;
+
+  @ApiPropertyOptional({ type: [VariantOptionTypeDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantOptionTypeDto)
+  variantOptions?: VariantOptionTypeDto[];
+
+  @ApiPropertyOptional({ type: [CreateVariantDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateVariantDto)
+  variants?: CreateVariantDto[];
 }

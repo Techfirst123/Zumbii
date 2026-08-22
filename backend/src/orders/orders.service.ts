@@ -4,13 +4,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProductsService } from '../products/products.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order-status.dto';
 import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
 
+function formatVariantLabel(optionValues: unknown): string | undefined {
+  if (!optionValues || typeof optionValues !== 'object') return undefined;
+  const entries = Object.entries(optionValues as Record<string, string>);
+  if (entries.length === 0) return undefined;
+  return entries.map(([, value]) => value).join(' / ');
+}
+
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private productsService: ProductsService,
+  ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
     const address = await this.prisma.address.findFirst({
@@ -32,6 +43,13 @@ export class OrdersService {
       throw new BadRequestException('Some products are not available');
     }
 
+    const variantIds = dto.items.map((i) => i.variantId).filter((id): id is string => !!id);
+    const variants = variantIds.length
+      ? await this.prisma.productVariant.findMany({
+          where: { id: { in: variantIds }, isActive: true },
+        })
+      : [];
+
     const campaignMap = await getActiveCampaignsByProductId(
       this.prisma,
       products.map((p) => p.id),
@@ -40,6 +58,7 @@ export class OrdersService {
     let subtotal = 0;
     const orderItems: any[] = [];
     const campaignIncrements: { campaignProductId: string; quantity: number }[] = [];
+    const variantDecrements: { variantId: string; productId: string; quantity: number }[] = [];
 
     for (const item of dto.items) {
       const product = products.find((p: { id: string }) => p.id === item.productId);
@@ -48,9 +67,18 @@ export class OrdersService {
         throw new NotFoundException(`Product ${item.productId} not found`);
       }
 
-      if (product.quantity < item.quantity) {
+      let variant: (typeof variants)[number] | undefined;
+      if (item.variantId) {
+        variant = variants.find((v) => v.id === item.variantId);
+        if (!variant || variant.productId !== product.id) {
+          throw new BadRequestException(`Variant ${item.variantId} not found for ${product.name}`);
+        }
+      }
+
+      const availableQty = variant ? variant.quantity : product.quantity;
+      if (availableQty < item.quantity) {
         throw new BadRequestException(
-          `Insufficient stock for ${product.name}. Available: ${product.quantity}`,
+          `Insufficient stock for ${product.name}. Available: ${availableQty}`,
         );
       }
 
@@ -67,19 +95,25 @@ export class OrdersService {
         campaignIncrements.push({ campaignProductId: campaign.campaignProductId, quantity: item.quantity });
       }
 
-      const unitPrice = campaign ? campaign.campaignPrice : Number(product.price);
+      const unitPrice = campaign ? campaign.campaignPrice : Number(variant?.price ?? product.price);
       const total = unitPrice * item.quantity;
       subtotal += total;
 
       orderItems.push({
         productId: product.id,
+        variantId: variant?.id,
+        variantLabel: variant ? formatVariantLabel(variant.optionValues) : undefined,
         name: product.name,
-        sku: product.sku,
+        sku: variant?.sku ?? product.sku,
         price: unitPrice,
         quantity: item.quantity,
         total,
-        image: product.images[0] || null,
+        image: variant?.images[0] || product.images[0] || null,
       });
+
+      if (variant) {
+        variantDecrements.push({ variantId: variant.id, productId: product.id, quantity: item.quantity });
+      }
     }
 
     let discountAmount = 0;
@@ -153,7 +187,9 @@ export class OrdersService {
       },
     });
 
+    const variantDecrementIds = new Set(variantDecrements.map((v) => v.variantId));
     for (const item of orderItems) {
+      if (variantDecrementIds.has(item.variantId)) continue; // handled below, targets the variant instead
       await this.prisma.product.update({
         where: { id: item.productId },
         data: {
@@ -161,6 +197,21 @@ export class OrdersService {
           soldCount: { increment: item.quantity },
         },
       });
+    }
+
+    const affectedProductIds = new Set<string>();
+    for (const dec of variantDecrements) {
+      await this.prisma.productVariant.update({
+        where: { id: dec.variantId },
+        data: {
+          quantity: { decrement: dec.quantity },
+          soldCount: { increment: dec.quantity },
+        },
+      });
+      affectedProductIds.add(dec.productId);
+    }
+    for (const productId of affectedProductIds) {
+      await this.productsService.syncAggregatesFromVariants(productId);
     }
 
     for (const increment of campaignIncrements) {
@@ -287,14 +338,29 @@ export class OrdersService {
       data.cancelledAt = new Date();
       data.cancelReason = dto.cancelReason;
 
+      const affectedProductIds = new Set<string>();
       for (const item of await this.prisma.orderItem.findMany({ where: { orderId: id } })) {
-        await this.prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            quantity: { increment: item.quantity },
-            soldCount: { decrement: item.quantity },
-          },
-        });
+        if (item.variantId) {
+          await this.prisma.productVariant.update({
+            where: { id: item.variantId },
+            data: {
+              quantity: { increment: item.quantity },
+              soldCount: { decrement: item.quantity },
+            },
+          });
+          affectedProductIds.add(item.productId);
+        } else {
+          await this.prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              quantity: { increment: item.quantity },
+              soldCount: { decrement: item.quantity },
+            },
+          });
+        }
+      }
+      for (const productId of affectedProductIds) {
+        await this.productsService.syncAggregatesFromVariants(productId);
       }
     }
 

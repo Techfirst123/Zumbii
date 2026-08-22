@@ -29,6 +29,7 @@ import { PincodeChecker } from '@/components/ui/PincodeChecker';
 import { useCartStore } from '@/store/cartStore';
 import { productsApi, ApiError } from '@/lib/api';
 import { mapBackendProduct } from '@/lib/adapters';
+import { ProductImagePlaceholder, PLACEHOLDER_IMAGE_SENTINEL } from '@/components/product/ProductImagePlaceholder';
 import type { Product } from '@/types';
 
 function CartPage() {
@@ -60,14 +61,14 @@ function CartPage() {
   const discount = Math.round(subtotal * (couponDiscount / 100));
   const total = subtotal + shipping + tax - discount;
 
-  const handleQuantityChange = (productId: string, delta: number) => {
-    const item = cartItems.find((i) => i.productId === productId);
+  const handleQuantityChange = (productId: string, variantId: string | undefined, delta: number) => {
+    const item = cartItems.find((i) => i.productId === productId && i.variantId === variantId);
     if (!item) return;
-    updateQuantity(productId, item.quantity + delta);
+    updateQuantity(productId, item.quantity + delta, variantId);
   };
 
-  const handleRemoveItem = (productId: string, name: string) => {
-    removeItem(productId);
+  const handleRemoveItem = (productId: string, variantId: string | undefined, name: string) => {
+    removeItem(productId, variantId);
     toast.success(`${name} removed from cart`);
   };
 
@@ -100,8 +101,8 @@ function CartPage() {
     toast.success('Coupon removed');
   };
 
-  const handleMoveToWishlist = (item: { productId: string; name: string }) => {
-    handleRemoveItem(item.productId, item.name);
+  const handleMoveToWishlist = (item: { productId: string; variantId?: string; name: string }) => {
+    handleRemoveItem(item.productId, item.variantId, item.name);
     toast.success(`${item.name} moved to wishlist`);
   };
 
@@ -159,7 +160,7 @@ function CartPage() {
               <AnimatePresence mode="popLayout">
                 {cartItems.map((item) => (
                   <motion.div
-                    key={item.productId}
+                    key={`${item.productId}-${item.variantId ?? ''}`}
                     layout
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -170,13 +171,17 @@ function CartPage() {
                       <div className="flex gap-4 sm:gap-5">
                         <Link href={`/product/${item.slug}`} className="shrink-0">
                           <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-surface-tertiary">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              className="object-cover"
-                              sizes="96px"
-                            />
+                            {item.image === PLACEHOLDER_IMAGE_SENTINEL ? (
+                              <ProductImagePlaceholder />
+                            ) : (
+                              <Image
+                                src={item.image}
+                                alt={item.name}
+                                fill
+                                className="object-cover"
+                                sizes="96px"
+                              />
+                            )}
                           </div>
                         </Link>
                         <div className="flex-1 min-w-0">
@@ -188,6 +193,9 @@ function CartPage() {
                               >
                                 {item.name}
                               </Link>
+                              {item.variantLabel && (
+                                <p className="text-xs text-text-secondary mt-0.5">{item.variantLabel}</p>
+                              )}
                               <p className="text-xs text-text-tertiary mt-0.5">{item.seller}</p>
                             </div>
                             <div className="text-right shrink-0">
@@ -200,7 +208,7 @@ function CartPage() {
                             <div className="flex items-center gap-2">
                               <div className="flex items-center border border-border rounded-xl overflow-hidden">
                                 <button
-                                  onClick={() => handleQuantityChange(item.productId, -1)}
+                                  onClick={() => handleQuantityChange(item.productId, item.variantId, -1)}
                                   disabled={item.quantity <= 1}
                                   className="w-11 h-11 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Decrease quantity"
@@ -211,7 +219,7 @@ function CartPage() {
                                   {item.quantity}
                                 </span>
                                 <button
-                                  onClick={() => handleQuantityChange(item.productId, 1)}
+                                  onClick={() => handleQuantityChange(item.productId, item.variantId, 1)}
                                   disabled={item.quantity >= item.maxQuantity}
                                   className="w-11 h-11 flex items-center justify-center hover:bg-surface-tertiary transition-colors disabled:opacity-40 disabled:pointer-events-none"
                                   aria-label="Increase quantity"
@@ -232,7 +240,7 @@ function CartPage() {
                                 <Heart className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleRemoveItem(item.productId, item.name)}
+                                onClick={() => handleRemoveItem(item.productId, item.variantId, item.name)}
                                 className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-red-500"
                                 aria-label="Remove item"
                               >
@@ -379,13 +387,17 @@ function CartPage() {
               >
                 <Card className="p-0 overflow-hidden">
                   <div className="aspect-square relative overflow-hidden bg-surface-tertiary">
-                    <Image
-                      src={product.images[0] || '/placeholder.svg'}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 640px) 50vw, 25vw"
-                    />
+                    {product.images[0] === PLACEHOLDER_IMAGE_SENTINEL ? (
+                      <ProductImagePlaceholder categoryName={product.category?.name} />
+                    ) : (
+                      <Image
+                        src={product.images[0]}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                      />
+                    )}
                   </div>
                   <div className="p-3 sm:p-4">
                     <h3 className="text-sm font-medium text-text-primary line-clamp-1 group-hover:text-zumbii-600 transition-colors">

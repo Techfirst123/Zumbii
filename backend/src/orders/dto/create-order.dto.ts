@@ -14,6 +14,11 @@ class OrderItemDto {
   @IsString()
   productId: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  variantId?: string;
+
   @ApiProperty()
   @IsNumber()
   @Min(1)

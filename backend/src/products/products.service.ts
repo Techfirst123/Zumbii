@@ -3,17 +3,48 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { CreateVariantDto } from './dto/product-variant.dto';
 import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function buildVariantData(v: CreateVariantDto, baseSku: string) {
+  return {
+    sku: v.sku?.trim() || `${baseSku}-${slugify(Object.values(v.optionValues).join('-'))}`,
+    price: v.price,
+    comparePrice: v.comparePrice,
+    costPrice: v.costPrice,
+    quantity: v.quantity,
+    images: v.images ?? [],
+    optionValues: v.optionValues as Prisma.InputJsonValue,
+    isActive: v.isActive ?? true,
+  };
+}
+
+const PRODUCT_INCLUDE = {
+  category: true,
+  brand: true,
+  variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' as const } },
+};
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateProductDto) {
+    const { variants, variantOptions, ...rest } = dto;
+
     const slugExists = await this.prisma.product.findUnique({
       where: { slug: dto.slug },
     });
@@ -30,19 +61,22 @@ export class ProductsService {
       throw new ConflictException('Product SKU already exists');
     }
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
-        ...dto,
-        price: dto.price,
-        comparePrice: dto.comparePrice,
-        costPrice: dto.costPrice,
-        weight: dto.weight,
+        ...rest,
+        variantOptions: (variantOptions as unknown as Prisma.InputJsonValue) ?? undefined,
+        variants: variants?.length
+          ? { create: variants.map((v) => buildVariantData(v, dto.sku)) }
+          : undefined,
       },
-      include: {
-        category: true,
-        brand: true,
-      },
+      include: PRODUCT_INCLUDE,
     });
+
+    if (variants?.length) {
+      return this.syncAggregatesFromVariants(product.id);
+    }
+
+    return product;
   }
 
   async bulkCreate(dtos: CreateProductDto[]) {
@@ -124,6 +158,7 @@ export class ProductsService {
         include: {
           category: { select: { id: true, name: true, slug: true } },
           brand: { select: { id: true, name: true, slug: true } },
+          variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' } },
         },
       }),
       this.prisma.product.count({ where }),
@@ -149,6 +184,7 @@ export class ProductsService {
       include: {
         category: true,
         brand: true,
+        variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' } },
         reviews: {
           include: {
             user: {
@@ -174,6 +210,7 @@ export class ProductsService {
       include: {
         category: true,
         brand: true,
+        variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' } },
         reviews: {
           include: {
             user: {
@@ -218,13 +255,62 @@ export class ProductsService {
       }
     }
 
-    return this.prisma.product.update({
+    const { variants, variantOptions, ...rest } = dto;
+
+    await this.prisma.product.update({
       where: { id },
-      data: dto,
-      include: {
-        category: true,
-        brand: true,
+      data: {
+        ...rest,
+        ...(variantOptions !== undefined
+          ? { variantOptions: variantOptions as unknown as Prisma.InputJsonValue }
+          : {}),
       },
+    });
+
+    if (variants !== undefined) {
+      await this.prisma.productVariant.deleteMany({ where: { productId: id } });
+      if (variants.length > 0) {
+        await this.prisma.productVariant.createMany({
+          data: variants.map((v) => ({
+            productId: id,
+            ...buildVariantData(v, dto.sku ?? product.sku),
+          })),
+        });
+      }
+      return this.syncAggregatesFromVariants(id);
+    }
+
+    return this.prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+  }
+
+  async syncAggregatesFromVariants(productId: string) {
+    const [variants, product] = await Promise.all([
+      this.prisma.productVariant.findMany({ where: { productId, isActive: true } }),
+      this.prisma.product.findUnique({ where: { id: productId } }),
+    ]);
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (variants.length === 0) {
+      return this.prisma.product.findUnique({ where: { id: productId }, include: PRODUCT_INCLUDE });
+    }
+
+    const cheapest = variants.reduce((min, v) => (Number(v.price) < Number(min.price) ? v : min));
+    const totalQuantity = variants.reduce((sum, v) => sum + v.quantity, 0);
+    const mirroredImages =
+      product.images.length === 0 ? variants.find((v) => v.images.length > 0)?.images : undefined;
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: {
+        price: cheapest.price,
+        comparePrice: cheapest.comparePrice,
+        quantity: totalQuantity,
+        ...(mirroredImages ? { images: mirroredImages } : {}),
+      },
+      include: PRODUCT_INCLUDE,
     });
   }
 
@@ -246,6 +332,7 @@ export class ProductsService {
       take: 8,
       include: {
         category: { select: { id: true, name: true, slug: true } },
+        variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -267,6 +354,7 @@ export class ProductsService {
       take: 4,
       include: {
         category: { select: { id: true, name: true, slug: true } },
+        variants: { where: { isActive: true }, orderBy: { createdAt: 'asc' } },
       },
     });
 

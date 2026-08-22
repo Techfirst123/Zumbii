@@ -49,7 +49,10 @@ import { Badge } from '@/components/ui/Badge';
 import { StarRating } from '@/components/ui/StarRating';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { PincodeChecker } from '@/components/ui/PincodeChecker';
-import type { Product, Review, Seller } from '@/types';
+import { Modal } from '@/components/ui/Modal';
+import { VariantSelector } from '@/components/product/VariantSelector';
+import { ProductImagePlaceholder, PLACEHOLDER_IMAGE_SENTINEL } from '@/components/product/ProductImagePlaceholder';
+import type { Product, ProductVariant, Review, Seller } from '@/types';
 import { productsApi, ApiError } from '@/lib/api';
 import { mapBackendProduct, mapBackendReviews } from '@/lib/adapters';
 import { useCartStore } from '@/store/cartStore';
@@ -114,11 +117,17 @@ function FadeView({ children, className }: { children: React.ReactNode; classNam
   );
 }
 
-function ImageGallery({ images }: { images: string[] }) {
+function ImageGallery({ images, categoryName }: { images: string[]; categoryName?: string }) {
   const [selected, setSelected] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
+  const isPlaceholder = images[selected] === PLACEHOLDER_IMAGE_SENTINEL;
+
+  useEffect(() => {
+    setSelected(0);
+  }, [images]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!imageRef.current) return;
@@ -132,20 +141,28 @@ function ImageGallery({ images }: { images: string[] }) {
     <div className="space-y-4">
       <div
         ref={imageRef}
-        className="relative aspect-square rounded-2xl overflow-hidden bg-surface-tertiary group cursor-crosshair"
-        onMouseEnter={() => setZoomed(true)}
+        className={clsx(
+          'relative aspect-square rounded-2xl overflow-hidden bg-surface-tertiary group',
+          !isPlaceholder && 'cursor-zoom-in'
+        )}
+        onMouseEnter={() => !isPlaceholder && setZoomed(true)}
         onMouseLeave={() => setZoomed(false)}
-        onMouseMove={handleMouseMove}
+        onMouseMove={!isPlaceholder ? handleMouseMove : undefined}
+        onClick={() => !isPlaceholder && setLightboxOpen(true)}
       >
-        <Image
-          src={images[selected]}
-          alt="Product"
-          fill
-          className="object-cover transition-transform duration-500"
-          sizes="(max-width: 768px) 100vw, 50vw"
-          priority
-          style={zoomed ? { transform: 'scale(1.8)', transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : undefined}
-        />
+        {isPlaceholder ? (
+          <ProductImagePlaceholder categoryName={categoryName} />
+        ) : (
+          <Image
+            src={images[selected]}
+            alt="Product"
+            fill
+            className="object-cover transition-transform duration-500"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            priority
+            style={zoomed ? { transform: 'scale(1.8)', transformOrigin: `${mousePos.x}% ${mousePos.y}%` } : undefined}
+          />
+        )}
         <div className="absolute top-3 left-3 flex gap-2 z-10">
           <Badge variant="new" size="sm">New</Badge>
           <Badge variant="sale" size="sm">31% OFF</Badge>
@@ -158,44 +175,60 @@ function ImageGallery({ images }: { images: string[] }) {
             <Play className="w-4 h-4 text-text-secondary" />
           </button>
         </div>
-        {zoomed && (
+        {zoomed && !isPlaceholder && (
           <div className="absolute bottom-3 left-3 bg-white/80 backdrop-blur-sm text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
             <ZoomIn className="w-3.5 h-3.5" />
-            Zoomed In
+            Click to view full screen
           </div>
         )}
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-1">
-        {images.map((img, i) => (
-          <button
-            key={i}
-            onClick={() => setSelected(i)}
-            className={clsx(
-              'relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200',
-              selected === i
-                ? 'border-gold-500 ring-2 ring-gold-200'
-                : 'border-border hover:border-gold-300'
-            )}
-          >
-            <Image
-              src={img}
-              alt={`Thumbnail ${i + 1}`}
-              fill
-              className="object-cover"
-              sizes="80px"
-            />
+      {!isPlaceholder && (
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {images.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setSelected(i)}
+              className={clsx(
+                'relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200',
+                selected === i
+                  ? 'border-gold-500 ring-2 ring-gold-200'
+                  : 'border-border hover:border-gold-300'
+              )}
+            >
+              <Image
+                src={img}
+                alt={`Thumbnail ${i + 1}`}
+                fill
+                className="object-cover"
+                sizes="80px"
+              />
+            </button>
+          ))}
+          <button className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-0.5 shrink-0 hover:border-zumbii-300 hover:bg-zumbii-50 transition-colors">
+            <RotateCw className="w-4 h-4 text-text-tertiary" />
+            <span className="text-[10px] text-text-tertiary font-medium">360°</span>
           </button>
-        ))}
-        <button className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-0.5 shrink-0 hover:border-zumbii-300 hover:bg-zumbii-50 transition-colors">
-          <RotateCw className="w-4 h-4 text-text-tertiary" />
-          <span className="text-[10px] text-text-tertiary font-medium">360°</span>
-        </button>
-        <button className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-0.5 shrink-0 hover:border-zumbii-300 hover:bg-zumbii-50 transition-colors">
-          <Play className="w-4 h-4 text-text-tertiary" />
-          <span className="text-[10px] text-text-tertiary font-medium">Video</span>
-        </button>
-      </div>
+          <button className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-0.5 shrink-0 hover:border-zumbii-300 hover:bg-zumbii-50 transition-colors">
+            <Play className="w-4 h-4 text-text-tertiary" />
+            <span className="text-[10px] text-text-tertiary font-medium">Video</span>
+          </button>
+        </div>
+      )}
+
+      {!isPlaceholder && (
+        <Modal open={lightboxOpen} onClose={() => setLightboxOpen(false)} size="full">
+          <div className="relative w-full h-[80vh]">
+            <Image
+              src={images[selected]}
+              alt="Product full view"
+              fill
+              className="object-contain"
+              sizes="100vw"
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -494,6 +527,7 @@ export default function ProductPage() {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const slug = params?.slug;
@@ -506,9 +540,16 @@ export default function ProductPage() {
       try {
         const raw = await productsApi.getBySlug(slug);
         if (cancelled) return;
-        setProduct(mapBackendProduct(raw));
+        const mapped = mapBackendProduct(raw);
+        setProduct(mapped);
         setReviews(mapBackendReviews(raw.reviews));
         setQuantity(raw.minOrderQty > 1 ? raw.minOrderQty : 1);
+        if (mapped.variants?.length) {
+          const initialVariant = mapped.variants.find((v) => v.quantity > 0) ?? mapped.variants[0];
+          setSelectedOptions(initialVariant.optionValues);
+        } else {
+          setSelectedOptions({});
+        }
         productsApi
           .getRelated(raw.id)
           .then((related) => {
@@ -559,9 +600,28 @@ export default function ProductPage() {
     );
   }
 
+  const selectedVariant: ProductVariant | undefined = product.variants?.length
+    ? product.variants.find((v) =>
+        Object.entries(selectedOptions).every(([key, val]) => v.optionValues[key] === val)
+      )
+    : undefined;
+
+  const effectivePrice = selectedVariant ? selectedVariant.price : product.price;
+  const effectiveComparePrice = selectedVariant ? selectedVariant.comparePrice : product.comparePrice;
+  const effectiveStock = selectedVariant ? selectedVariant.quantity : product.stock;
+  const effectiveImages = selectedVariant?.images.length ? selectedVariant.images : product.images;
+  const effectiveSku = selectedVariant?.sku ?? product.sku;
+
+  function isOptionValueAvailable(optionName: string, value: string): boolean {
+    if (!product?.variants?.length) return true;
+    return product.variants.some(
+      (v) => v.optionValues[optionName] === value && v.isActive && v.quantity > 0
+    );
+  }
+
   const campaign = product.activeCampaign;
-  const displayPrice = campaign ? campaign.campaignPrice : product.price;
-  const strikePrice = campaign ? product.price : product.comparePrice;
+  const displayPrice = campaign ? campaign.campaignPrice : effectivePrice;
+  const strikePrice = campaign ? effectivePrice : effectiveComparePrice;
 
   const discount = strikePrice
     ? Math.round(((strikePrice - displayPrice) / strikePrice) * 100)
@@ -583,12 +643,17 @@ export default function ProductPage() {
     if (!requireAuth()) return false;
     addItem({
       productId: product.id,
+      variantId: selectedVariant?.id,
+      variantLabel: selectedVariant
+        ? Object.values(selectedVariant.optionValues).join(' / ')
+        : undefined,
+      sku: effectiveSku,
       slug: product.slug,
       name: product.name,
-      image: product.images[0],
+      image: effectiveImages[0] ?? product.images[0],
       price: displayPrice,
       quantity,
-      maxQuantity: Math.max(product.stock, 1),
+      maxQuantity: Math.max(effectiveStock, 1),
       seller: product.seller.businessName,
     });
     setAddedToCart(true);
@@ -631,7 +696,7 @@ export default function ProductPage() {
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
           <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
             <FadeView>
-              <ImageGallery images={product.images} />
+              <ImageGallery images={effectiveImages} categoryName={product.category?.name} />
             </FadeView>
           </div>
 
@@ -663,7 +728,7 @@ export default function ProductPage() {
                   </span>
                   <span className="text-xs text-text-tertiary">|</span>
                   <span className="text-sm text-text-tertiary">
-                    SKU: {product.sku}
+                    SKU: {effectiveSku}
                   </span>
                 </div>
               </div>
@@ -706,21 +771,34 @@ export default function ProductPage() {
                   </div>
                   <div className="flex items-center gap-1.5 text-text-secondary">
                     <Ruler className="w-4 h-4 text-text-tertiary" />
-                    Available: <span className="font-medium text-text-primary">{product.availableQuantity.toLocaleString()} units</span>
+                    Available: <span className="font-medium text-text-primary">{effectiveStock.toLocaleString()} units</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-text-secondary">
                     <IndianRupee className="w-4 h-4 text-text-tertiary" />
                     GST: <span className="font-medium text-text-primary">{product.gstRate}%</span>
                   </div>
-                  {product.stock > 0 && product.stock <= 10 && (
+                  {effectiveStock > 0 && effectiveStock <= 10 && (
                     <span className="text-amber-600 font-medium text-xs flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5" />
-                      Only {product.stock} left in stock
+                      Only {effectiveStock} left in stock
                     </span>
                   )}
                 </div>
               </Card>
             </FadeView>
+
+            {product.variantOptions && product.variantOptions.length > 0 && (
+              <FadeView>
+                <Card className="p-5">
+                  <VariantSelector
+                    variantOptions={product.variantOptions}
+                    selected={selectedOptions}
+                    onSelect={(name, value) => setSelectedOptions((prev) => ({ ...prev, [name]: value }))}
+                    isValueAvailable={isOptionValueAvailable}
+                  />
+                </Card>
+              </FadeView>
+            )}
 
             <FadeView>
               <Card className="p-5 space-y-4">
@@ -733,7 +811,7 @@ export default function ProductPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     size="lg"
-                    disabled={product.stock === 0}
+                    disabled={effectiveStock === 0}
                     className={clsx(
                       'flex-1 transition-all',
                       addedToCart && 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30'
@@ -745,7 +823,7 @@ export default function ProductPage() {
                         <CheckCircle2 className="w-5 h-5" />
                         Added to Cart
                       </>
-                    ) : product.stock === 0 ? (
+                    ) : effectiveStock === 0 ? (
                       'Out of Stock'
                     ) : (
                       <>
@@ -758,7 +836,7 @@ export default function ProductPage() {
                     variant="secondary"
                     size="lg"
                     className="flex-1"
-                    disabled={product.stock === 0}
+                    disabled={effectiveStock === 0}
                     onClick={handleBuyNow}
                   >
                     <Zap className="w-5 h-5" />
