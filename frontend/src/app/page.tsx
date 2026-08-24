@@ -400,7 +400,7 @@ function CategoriesSection() {
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-20 lg:py-28 bg-surface-secondary">
+    <section className="py-20 lg:py-28 bg-surface-secondary overflow-hidden">
       <Container>
         <FadeInSection>
           <SectionHeader
@@ -409,36 +409,36 @@ function CategoriesSection() {
             subtitle="Explore thousands of products across diverse categories"
           />
         </FadeInSection>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          variants={staggerContainer}
-          className="mt-12 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6"
-        >
-          {categories.map((cat) => {
-            const { icon: IconComponent, gradient } = categoryVisual(cat.name || cat.slug);
-            return (
-              <motion.div key={cat.id} variants={fadeInUp}>
-                <Link
-                  href={`/category/${cat.slug}`}
-                  className="group block"
-                >
-                  <Card className="p-6 sm:p-8 text-center">
-                    <div className={`w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                      <IconComponent className="w-7 h-7 text-white" />
-                    </div>
-                    <h3 className="mt-4 font-semibold text-text-primary text-sm sm:text-base">{cat.name}</h3>
-                    <p className="mt-1 text-xs text-text-tertiary">
-                      {cat._count?.products ?? 0} products
-                    </p>
-                  </Card>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </motion.div>
       </Container>
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={staggerContainer}
+        className="mt-12 flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4 sm:px-6 lg:px-8"
+      >
+        {categories.map((cat) => {
+          const { icon: IconComponent, gradient } = categoryVisual(cat.name || cat.slug);
+          return (
+            <motion.div key={cat.id} variants={fadeInUp} className="shrink-0 snap-start w-28 sm:w-32">
+              <Link
+                href={`/category/${cat.slug}`}
+                className="group block"
+              >
+                <Card className="p-3 sm:p-4 text-center">
+                  <div className={`w-10 h-10 sm:w-11 sm:h-11 mx-auto rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                    <IconComponent className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="mt-2.5 font-semibold text-text-primary text-xs sm:text-sm leading-snug line-clamp-2">{cat.name}</h3>
+                  <p className="mt-0.5 text-[11px] text-text-tertiary">
+                    {cat._count?.products ?? 0} products
+                  </p>
+                </Card>
+              </Link>
+            </motion.div>
+          );
+        })}
+      </motion.div>
     </section>
   );
 }
