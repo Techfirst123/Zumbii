@@ -400,13 +400,14 @@ function CategoriesSection() {
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-20 lg:py-28 bg-surface-secondary overflow-hidden">
+    <section className="py-10 lg:py-12 bg-surface-secondary overflow-hidden">
       <Container>
         <FadeInSection>
           <SectionHeader
             eyebrow="Categories"
             title="Shop by Category"
             subtitle="Explore thousands of products across diverse categories"
+            className="[&_h2]:text-2xl sm:[&_h2]:text-3xl lg:[&_h2]:text-4xl [&_p:last-child]:mt-1.5 [&_p:last-child]:text-sm sm:[&_p:last-child]:text-base"
           />
         </FadeInSection>
       </Container>
@@ -415,7 +416,7 @@ function CategoriesSection() {
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
-        className="mt-12 flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4 sm:px-6 lg:px-8"
+        className="mt-6 flex items-stretch gap-3 sm:gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-4 sm:px-6 lg:px-8"
       >
         {categories.map((cat) => {
           const { icon: IconComponent, gradient } = categoryVisual(cat.name || cat.slug);
