@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView, useReducedMotion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Mic,
@@ -15,6 +15,7 @@ import {
   Package,
   Truck,
   Star,
+  Clock,
   ChevronRight,
   ChevronLeft,
   ArrowRight,
@@ -72,6 +73,21 @@ const trendingSearches = ["Electronics", "Fashion", "Home & Living", "Wireless E
 
 const HERO_CATEGORY_TILES = 6;
 
+const heroStagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+};
+
+const heroItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
+};
+
+const heroItemReduced = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } },
+};
+
 const testimonials = [
   { name: "Rajesh Mehta", role: "Supplier, Mumbai", avatar: "RM", content: "Zumbii transformed our manufacturing business. We reached buyers across 15 states within the first month. The B2B RFQ system is a game-changer.", rating: 5 },
   { name: "Priya Sharma", role: "Franchise Partner, Delhi", avatar: "PS", content: "The franchise onboarding was seamless. Training, technology, marketing support — everything was world-class. Revenue grew 3x in 6 months.", rating: 5 },
@@ -86,6 +102,8 @@ function HeroSection() {
   const [heroCategories, setHeroCategories] = useState<BackendCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
+  const itemVariants = shouldReduceMotion ? heroItemReduced : heroItem;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -146,8 +164,8 @@ function HeroSection() {
 
       <Container className="relative z-10">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-center">
-          <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="lg:flex-1 text-center lg:text-left">
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3 lg:mb-4 shadow-lg shadow-white/5">
+          <motion.div initial="hidden" animate="visible" variants={heroStagger} className="lg:flex-1 text-center lg:text-left">
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3 lg:mb-4 shadow-lg shadow-white/5">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
@@ -155,7 +173,7 @@ function HeroSection() {
               <span className="text-xs font-medium text-white/90">India&apos;s Trusted Business Marketplace</span>
             </motion.div>
 
-            <motion.h1 variants={fadeInUp} className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-[1.15] tracking-tight">
+            <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-[1.15] tracking-tight">
               Empowering Businesses,{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200 inline-block">
                 <AnimatePresence mode="wait">
@@ -174,17 +192,23 @@ function HeroSection() {
               Growing Together.
             </motion.h1>
 
-            <motion.p variants={fadeInUp} className="mt-3 lg:mt-4 text-sm sm:text-base lg:text-lg text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            <motion.p variants={itemVariants} className="mt-3 lg:mt-4 text-sm sm:text-base lg:text-lg text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               India&apos;s premier B2B & B2C marketplace. Source products, grow your business, and connect with a thriving community of sellers, suppliers, and buyers.
             </motion.p>
 
-            <motion.div variants={fadeInUp} className="mt-4 lg:mt-6 flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start">
-              <Link href="/marketplace">
-                <Button variant="gold" size="lg" className="shadow-2xl shadow-gold-500/25 hover:shadow-gold-500/40">
-                  <ShoppingBag className="w-5 h-5" />
-                  Start Shopping
-                </Button>
-              </Link>
+            <motion.div variants={itemVariants} className="mt-4 lg:mt-6 flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start">
+              <motion.div
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
+                className="inline-block"
+              >
+                <Link href="/marketplace">
+                  <Button variant="gold" size="lg" className="shadow-2xl shadow-gold-500/25 hover:shadow-gold-500/40">
+                    <ShoppingBag className="w-5 h-5" />
+                    Start Shopping
+                  </Button>
+                </Link>
+              </motion.div>
               <Link href="/sell">
                 <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/15 hover:text-white hover:border-white/50">
                   <Store className="w-5 h-5" />
@@ -193,7 +217,7 @@ function HeroSection() {
               </Link>
             </motion.div>
 
-            <motion.form variants={fadeInUp} onSubmit={handleSearchSubmit} className="mt-4 lg:mt-6 max-w-xl mx-auto lg:mx-0">
+            <motion.form variants={itemVariants} onSubmit={handleSearchSubmit} className="mt-4 lg:mt-6 max-w-xl mx-auto lg:mx-0">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-zumbii-400 via-gold-400 to-zumbii-400 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-all duration-500" />
                 <div className="relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 focus-within:bg-white/20 focus-within:border-white/40">
@@ -233,7 +257,7 @@ function HeroSection() {
               </div>
             </motion.form>
 
-            <motion.div variants={fadeInUp} className="mt-4 lg:mt-6 flex flex-wrap items-center gap-2.5 justify-center lg:justify-start">
+            <motion.div variants={itemVariants} className="mt-4 lg:mt-6 flex flex-wrap items-center gap-2.5 justify-center lg:justify-start">
               <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/8 border border-white/15">
                 <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="text-xs font-medium text-white/90 whitespace-nowrap">Verified Sellers</span>
@@ -246,13 +270,40 @@ function HeroSection() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 100 }}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 60 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: shouldReduceMotion ? 0.4 : 0.6, delay: shouldReduceMotion ? 0 : 0.25 }}
             className="hidden lg:flex relative lg:flex-1 items-center justify-center"
           >
-            <div className="relative w-full max-w-sm">
+            <motion.div
+              className="relative w-full max-w-sm"
+              animate={shouldReduceMotion ? undefined : { y: [0, -10, 0] }}
+              transition={shouldReduceMotion ? undefined : { duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            >
               <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-gold-400/30 to-zumbii-400/30 rounded-[32px] blur-2xl" />
+
+              <motion.div
+                initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={
+                  shouldReduceMotion
+                    ? { delay: 0.3, duration: 0.3 }
+                    : { delay: 0.7, type: "spring", stiffness: 260, damping: 18 }
+                }
+                className="absolute -top-3 -right-3 z-30 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-gold-500 text-zumbii-950 shadow-lg shadow-black/40"
+              >
+                <span className="relative flex items-center justify-center w-5 h-5 shrink-0">
+                  {!shouldReduceMotion && (
+                    <motion.span
+                      className="absolute inset-0 rounded-full bg-white/60"
+                      animate={{ scale: [1, 1.7, 1], opacity: [0.6, 0, 0.6] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                  )}
+                  <Clock className="relative w-3.5 h-3.5" />
+                </span>
+                <span className="text-[11px] font-bold whitespace-nowrap">Delivery in 30 Minutes</span>
+              </motion.div>
 
               <div className="relative">
                 <div className="inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-zumbii-950/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30 mb-3">
@@ -319,7 +370,7 @@ function HeroSection() {
                   <Star className="w-3 h-3 fill-gold-500 text-gold-500" /> 4.8 avg rating across 1,000+ sellers
                 </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </Container>
