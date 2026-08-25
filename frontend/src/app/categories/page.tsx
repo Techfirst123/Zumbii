@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Search, ArrowRight, SlidersHorizontal, X, Package, Loader2 } from "lucide-react";
 import Container from "@/components/ui/container";
-import { categoriesApi, ApiError, type BackendCategory } from "@/lib/api";
+import { categoriesApi, resolveImageUrl, ApiError, type BackendCategory } from "@/lib/api";
 import { categoryVisual } from "@/lib/categoryVisuals";
 
 const containerVariants = {
@@ -186,11 +187,23 @@ export default function CategoriesPage() {
                       className="group block h-full"
                     >
                       <div className="relative h-full rounded-2xl border border-border bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-lg hover:shadow-zumbii-100/50 hover:-translate-y-1 hover:border-zumbii-200">
-                        <div
-                          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all duration-300`}
-                        >
-                          <Icon className="w-6 h-6 text-white" />
-                        </div>
+                        {cat.image ? (
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
+                            <Image
+                              src={resolveImageUrl(cat.image)}
+                              alt={cat.name}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all duration-300`}
+                          >
+                            <Icon className="w-6 h-6 text-white" />
+                          </div>
+                        )}
 
                         <h3 className="mt-4 font-semibold text-text-primary text-sm leading-snug group-hover:text-zumbii-600 transition-colors">
                           {cat.name}

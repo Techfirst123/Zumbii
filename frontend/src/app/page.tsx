@@ -31,7 +31,7 @@ import SectionHeader from "@/components/ui/section-header";
 import { ProductCard } from "@/components/ui/ProductCard";
 import PromoBanner from "@/components/home/PromoBanner";
 import CampaignBanners from "@/components/home/CampaignBanners";
-import { productsApi, categoriesApi, ApiError, type BackendCategory } from "@/lib/api";
+import { productsApi, categoriesApi, resolveImageUrl, ApiError, type BackendCategory } from "@/lib/api";
 import { mapBackendProduct } from "@/lib/adapters";
 import { categoryVisual } from "@/lib/categoryVisuals";
 import type { Product } from "@/types";
@@ -427,9 +427,21 @@ function CategoriesSection() {
                 className="group block"
               >
                 <Card className="p-3 sm:p-4 text-center">
-                  <div className={`w-10 h-10 sm:w-11 sm:h-11 mx-auto rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                    <IconComponent className="w-5 h-5 text-white" />
-                  </div>
+                  {cat.image ? (
+                    <div className="relative w-10 h-10 sm:w-11 sm:h-11 mx-auto rounded-xl overflow-hidden shadow-md group-hover:scale-110 transition-transform duration-300">
+                      <Image
+                        src={resolveImageUrl(cat.image)}
+                        alt={cat.name}
+                        fill
+                        className="object-cover"
+                        sizes="44px"
+                      />
+                    </div>
+                  ) : (
+                    <div className={`w-10 h-10 sm:w-11 sm:h-11 mx-auto rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                      <IconComponent className="w-5 h-5 text-white" />
+                    </div>
+                  )}
                   <h3 className="mt-2.5 font-semibold text-text-primary text-xs sm:text-sm leading-snug line-clamp-2">{cat.name}</h3>
                   <p className="mt-0.5 text-[11px] text-text-tertiary">
                     {cat._count?.products ?? 0} products

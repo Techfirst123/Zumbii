@@ -19,7 +19,8 @@ import type { Product } from '@/types';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { QuickViewModal } from '@/components/product/QuickViewModal';
 import Container from '@/components/ui/container';
-import { categoriesApi, productsApi, ApiError, type BackendCategory } from '@/lib/api';
+import Image from 'next/image';
+import { categoriesApi, productsApi, resolveImageUrl, ApiError, type BackendCategory } from '@/lib/api';
 import { mapBackendProduct } from '@/lib/adapters';
 
 const sortOptions = [
@@ -159,10 +160,19 @@ export default function CategoryDetailPage() {
 
       <div className="bg-gradient-to-b from-zumbii-50 to-surface py-8 lg:py-12">
         <Container>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary tracking-tight">
-              {category?.name || 'Loading...'}
-            </h1>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="flex items-center gap-4">
+            {category?.image && (
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-2xl overflow-hidden shadow-sm">
+                <Image src={resolveImageUrl(category.image)} alt={category.name} fill className="object-cover" sizes="64px" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-text-primary tracking-tight">
+                {category?.name || 'Loading...'}
+              </h1>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
             {category?.description && (
               <p className="mt-2 text-text-secondary max-w-2xl">{category.description}</p>
             )}
