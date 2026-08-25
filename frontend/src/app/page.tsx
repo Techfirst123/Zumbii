@@ -70,11 +70,7 @@ const heroTaglines = [
 
 const trendingSearches = ["Electronics", "Fashion", "Home & Living", "Wireless Earbuds", "Sneakers"];
 
-const heroCardPositions = [
-  { classes: "top-[6%] left-[12%]", rotate: -4, z: 3 },
-  { classes: "top-[30%] right-[2%]", rotate: 3, z: 2 },
-  { classes: "bottom-[5%] left-[26%]", rotate: -2, z: 1 },
-];
+const HERO_CATEGORY_TILES = 6;
 
 const testimonials = [
   { name: "Rajesh Mehta", role: "Supplier, Mumbai", avatar: "RM", content: "Zumbii transformed our manufacturing business. We reached buyers across 15 states within the first month. The B2B RFQ system is a game-changer.", rating: 5 },
@@ -84,17 +80,34 @@ const testimonials = [
   { name: "Vikram Singh", role: "Distributor, Jaipur", avatar: "VS", content: "Zumbii's logistics network is incredible. We now serve 200+ retailers across Rajasthan with next-day delivery. The platform is intuitive and reliable.", rating: 5 },
 ];
 
-function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[]; loading: boolean }) {
+function HeroSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [taglineIndex, setTaglineIndex] = useState(0);
+  const [heroCategories, setHeroCategories] = useState<BackendCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const router = useRouter();
-  const showcaseProducts = featuredProducts.slice(0, 4);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTaglineIndex((prev) => (prev + 1) % heroTaglines.length);
     }, 2800);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    categoriesApi
+      .list()
+      .then((res) => {
+        if (!cancelled) setHeroCategories(res.filter((c) => !c.parentId).slice(0, HERO_CATEGORY_TILES));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCategoriesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function goToSearch(term: string) {
@@ -110,7 +123,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
   return (
     <section
       className="relative flex items-center overflow-hidden"
-      style={{ paddingBlock: "clamp(48px, 8vw, 96px)" }}
+      style={{ paddingBlock: "clamp(24px, 4vw, 48px)" }}
     >
       <div
         className="absolute inset-0"
@@ -134,15 +147,15 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
       <Container className="relative z-10">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-center">
           <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="lg:flex-1 text-center lg:text-left">
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-1 sm:px-5 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-4 lg:mb-6 shadow-lg shadow-white/5">
-              <span className="relative flex h-2 w-2">
+            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3 lg:mb-4 shadow-lg shadow-white/5">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
               </span>
-              <span className="text-sm font-medium text-white/90">India&apos;s Trusted Business Marketplace</span>
+              <span className="text-xs font-medium text-white/90">India&apos;s Trusted Business Marketplace</span>
             </motion.div>
 
-            <motion.h1 variants={fadeInUp} className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-[1.15] tracking-tight">
+            <motion.h1 variants={fadeInUp} className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-[1.15] tracking-tight">
               Empowering Businesses,{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200 inline-block">
                 <AnimatePresence mode="wait">
@@ -161,11 +174,11 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
               Growing Together.
             </motion.h1>
 
-            <motion.p variants={fadeInUp} className="mt-4 lg:mt-6 text-base sm:text-lg lg:text-xl text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+            <motion.p variants={fadeInUp} className="mt-3 lg:mt-4 text-sm sm:text-base lg:text-lg text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               India&apos;s premier B2B & B2C marketplace. Source products, grow your business, and connect with a thriving community of sellers, suppliers, and buyers.
             </motion.p>
 
-            <motion.div variants={fadeInUp} className="mt-5 lg:mt-8 flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start">
+            <motion.div variants={fadeInUp} className="mt-4 lg:mt-6 flex flex-wrap gap-3 lg:gap-4 justify-center lg:justify-start">
               <Link href="/marketplace">
                 <Button variant="gold" size="lg" className="shadow-2xl shadow-gold-500/25 hover:shadow-gold-500/40">
                   <ShoppingBag className="w-5 h-5" />
@@ -180,7 +193,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
               </Link>
             </motion.div>
 
-            <motion.form variants={fadeInUp} onSubmit={handleSearchSubmit} className="mt-6 lg:mt-10 max-w-xl mx-auto lg:mx-0">
+            <motion.form variants={fadeInUp} onSubmit={handleSearchSubmit} className="mt-4 lg:mt-6 max-w-xl mx-auto lg:mx-0">
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-zumbii-400 via-gold-400 to-zumbii-400 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition-all duration-500" />
                 <div className="relative flex items-center bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl overflow-hidden transition-all duration-300 focus-within:bg-white/20 focus-within:border-white/40">
@@ -220,7 +233,7 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
               </div>
             </motion.form>
 
-            <motion.div variants={fadeInUp} className="mt-5 lg:mt-8 flex flex-wrap items-center gap-2.5 justify-center lg:justify-start">
+            <motion.div variants={fadeInUp} className="mt-4 lg:mt-6 flex flex-wrap items-center gap-2.5 justify-center lg:justify-start">
               <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/8 border border-white/15">
                 <Shield className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="text-xs font-medium text-white/90 whitespace-nowrap">Verified Sellers</span>
@@ -238,68 +251,73 @@ function HeroSection({ featuredProducts, loading }: { featuredProducts: Product[
             transition={{ duration: 0.8, delay: 0.3 }}
             className="hidden lg:flex relative lg:flex-1 items-center justify-center"
           >
-            <div
-              className="relative aspect-square mx-auto"
-              style={{ height: "clamp(280px, 34vw, 440px)" }}
-            >
-              <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-gold-400/30 to-zumbii-400/30 rounded-[40px] blur-2xl" />
+            <div className="relative w-full max-w-sm">
+              <div className="absolute -inset-4 bg-gradient-to-r from-zumbii-400/30 via-gold-400/30 to-zumbii-400/30 rounded-[32px] blur-2xl" />
 
-              <div className="absolute top-[6%] left-[2%] z-20 inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-zumbii-950/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-                </span>
-                <span className="text-[11px] font-bold tracking-wide uppercase text-white">Live Deal</span>
-              </div>
+              <div className="relative">
+                <div className="inline-flex items-center gap-2 pl-2.5 pr-3.5 py-1.5 rounded-full bg-zumbii-950/55 border border-white/25 backdrop-blur-md shadow-lg shadow-black/30 mb-3">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                  </span>
+                  <span className="text-[11px] font-bold tracking-wide uppercase text-white">Shop by Category</span>
+                </div>
 
-              {Array.from({ length: 3 }).map((_, i) => {
-                const position = heroCardPositions[i];
-                const product = !loading ? showcaseProducts[i] : undefined;
-                if (loading || !product) {
-                  return (
-                    <div
-                      key={i}
-                      className={`absolute ${position.classes} rounded-[26px_12px_26px_26px] overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center animate-pulse`}
-                      style={{ width: "38%", aspectRatio: "1 / 1.08", transform: `rotate(${position.rotate}deg)`, zIndex: position.z }}
-                    >
-                      <Package className="w-8 h-8 text-white/20" />
-                    </div>
-                  );
-                }
-                const item = product as Product;
-                const discount =
-                  item.comparePrice && item.comparePrice > item.price
-                    ? Math.round(((item.comparePrice - item.price) / item.comparePrice) * 100)
-                    : 0;
-                return (
-                  <Link
-                    key={item.id}
-                    href={`/product/${item.slug}`}
-                    className={`group absolute ${position.classes} rounded-[26px_12px_26px_26px] overflow-hidden shadow-2xl shadow-black/40 hover:-translate-y-1 transition-transform duration-300`}
-                    style={{ width: "38%", aspectRatio: "1 / 1.08", transform: `rotate(${position.rotate}deg)`, zIndex: position.z }}
-                  >
-                    <Image
-                      src={item.images[0]}
-                      alt={item.name}
-                      fill
-                      sizes="220px"
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    {discount > 0 && (
-                      <span className="absolute -top-2 -right-2 rotate-[8deg] px-2.5 py-1.5 rounded-[4px_12px_12px_4px] bg-brand-red-600 text-white text-xs font-extrabold shadow-lg shadow-brand-red-600/40 leading-none">
-                        {discount}%<br />OFF
-                      </span>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 to-transparent">
-                      <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
-                      <p className="text-[11px] text-white/80 font-semibold">₹{item.price.toLocaleString("en-IN")}</p>
-                    </div>
-                  </Link>
-                );
-              })}
+                <div className="grid grid-cols-3 gap-3">
+                  {Array.from({ length: HERO_CATEGORY_TILES }).map((_, i) => {
+                    const cat = heroCategories[i];
 
-              <div className="absolute bottom-[2%] right-[4%] z-20 flex items-center gap-1 text-white/65 text-[11px]">
-                <Star className="w-3 h-3 fill-gold-500 text-gold-500" /> 4.8 avg rating
+                    if (categoriesLoading) {
+                      return (
+                        <div
+                          key={i}
+                          className="aspect-square rounded-2xl bg-white/5 border border-white/10 animate-pulse"
+                        />
+                      );
+                    }
+
+                    if (!cat) {
+                      return (
+                        <div
+                          key={i}
+                          className="aspect-square rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center"
+                        >
+                          <Package className="w-6 h-6 text-white/20" />
+                        </div>
+                      );
+                    }
+
+                    const { icon: IconComponent, gradient } = categoryVisual(cat.name || cat.slug);
+                    return (
+                      <Link
+                        key={cat.id}
+                        href={`/category/${cat.slug}`}
+                        className="group relative aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-black/30 hover:-translate-y-1 transition-transform duration-300"
+                      >
+                        {cat.image ? (
+                          <Image
+                            src={resolveImageUrl(cat.image)}
+                            alt={cat.name}
+                            fill
+                            sizes="110px"
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                            <IconComponent className="w-6 h-6 text-white" />
+                          </div>
+                        )}
+                        <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/85 to-transparent">
+                          <p className="text-[10px] text-white font-semibold truncate text-center">{cat.name}</p>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-3 flex items-center justify-center gap-1 text-white/65 text-[11px]">
+                  <Star className="w-3 h-3 fill-gold-500 text-gold-500" /> 4.8 avg rating across 1,000+ sellers
+                </div>
               </div>
             </div>
           </motion.div>
@@ -629,7 +647,6 @@ function NewsletterSection() {
 }
 
 export default function HomePage() {
-  const [featured, setFeatured] = useState<Product[]>([]);
   const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -639,14 +656,12 @@ export default function HomePage() {
 
     async function load() {
       try {
-        const [featuredRes, newArrivalsRes, bestSellersRes] = await Promise.all([
-          productsApi.featured(),
+        const [newArrivalsRes, bestSellersRes] = await Promise.all([
           productsApi.list({ sortBy: "createdAt", sortOrder: "desc", limit: 8 }),
           productsApi.list({ sortBy: "soldCount", sortOrder: "desc", limit: 8 }),
         ]);
         if (cancelled) return;
 
-        setFeatured(featuredRes.map(mapBackendProduct));
         setNewArrivals(newArrivalsRes.data.map(mapBackendProduct));
         setBestSellers(bestSellersRes.data.map(mapBackendProduct));
       } catch (err) {
@@ -664,7 +679,7 @@ export default function HomePage() {
 
   return (
     <>
-      <HeroSection featuredProducts={featured} loading={loading} />
+      <HeroSection />
       <CampaignBanners />
       <CategoriesSection />
       <BestSellersSection products={bestSellers} loading={loading} />
