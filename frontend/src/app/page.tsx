@@ -292,6 +292,8 @@ function HeroSection() {
                 }
                 className="absolute -top-3 -right-3 z-30 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-gold-500 text-zumbii-950 shadow-lg shadow-black/40"
               >
+                {/* "30-minute" delivery is only real in specific serviceable pincodes today (see backend Pincode/DeliveryService).
+                    Swap this copy for that promise once the homepage can check the visitor's pincode/zone. */}
                 <span className="relative flex items-center justify-center w-5 h-5 shrink-0">
                   {!shouldReduceMotion && (
                     <motion.span
@@ -302,7 +304,7 @@ function HeroSection() {
                   )}
                   <Clock className="relative w-3.5 h-3.5" />
                 </span>
-                <span className="text-[11px] font-bold whitespace-nowrap">Delivery in 30 Minutes</span>
+                <span className="text-[11px] font-bold whitespace-nowrap">Quick Delivery in Select Cities</span>
               </motion.div>
 
               <div className="relative">
