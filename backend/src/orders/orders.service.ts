@@ -392,4 +392,61 @@ export class OrdersService {
       data: { paymentStatus: dto.paymentStatus },
     });
   }
+
+  async getAnalytics(days = 14) {
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    since.setDate(since.getDate() - (days - 1));
+
+    const [totalAgg, statusGroups, paymentGroups, recentOrders] = await Promise.all([
+      this.prisma.order.aggregate({
+        _sum: { total: true },
+        _count: { _all: true },
+      }),
+      this.prisma.order.groupBy({
+        by: ['status'],
+        _count: { _all: true },
+      }),
+      this.prisma.order.groupBy({
+        by: ['paymentStatus'],
+        _count: { _all: true },
+      }),
+      this.prisma.order.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true, total: true },
+      }),
+    ]);
+
+    const totalOrders = totalAgg._count._all;
+    const totalRevenue = Number(totalAgg._sum.total ?? 0);
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    const bucketMap = new Map<string, { revenue: number; orders: number }>();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(since);
+      d.setDate(d.getDate() + i);
+      bucketMap.set(d.toISOString().slice(0, 10), { revenue: 0, orders: 0 });
+    }
+    for (const order of recentOrders) {
+      const key = order.createdAt.toISOString().slice(0, 10);
+      const bucket = bucketMap.get(key);
+      if (bucket) {
+        bucket.revenue += Number(order.total);
+        bucket.orders += 1;
+      }
+    }
+
+    return {
+      totalOrders,
+      totalRevenue,
+      avgOrderValue,
+      statusBreakdown: statusGroups.map((g) => ({ status: g.status, count: g._count._all })),
+      paymentBreakdown: paymentGroups.map((g) => ({ paymentStatus: g.paymentStatus, count: g._count._all })),
+      dailyRevenue: Array.from(bucketMap.entries()).map(([date, bucket]) => ({
+        date,
+        revenue: bucket.revenue,
+        orders: bucket.orders,
+      })),
+    };
+  }
 }

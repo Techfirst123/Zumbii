@@ -42,6 +42,12 @@ export class AdminOrdersController {
     });
   }
 
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get order analytics summary (revenue, status breakdown, daily trend)' })
+  getAnalytics(@Query('days') days?: string) {
+    return this.ordersService.getAnalytics(days ? parseInt(days, 10) : 14);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
   findOne(@Param('id') id: string) {
