@@ -165,14 +165,6 @@ function HeroSection() {
       <Container className="relative z-10">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-center">
           <motion.div initial="hidden" animate="visible" variants={heroStagger} className="lg:flex-1 text-center lg:text-left">
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3 lg:mb-4 shadow-lg shadow-white/5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-              </span>
-              <span className="text-xs font-medium text-white/90">India&apos;s Trusted Business Marketplace</span>
-            </motion.div>
-
             <motion.h1 variants={itemVariants} className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-[1.15] tracking-tight">
               Empowering Businesses,{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-200 inline-block">
