@@ -141,7 +141,7 @@ function HeroSection() {
   return (
     <section
       className="relative flex items-center overflow-hidden"
-      style={{ paddingBlock: "clamp(24px, 4vw, 48px)" }}
+      style={{ paddingTop: "clamp(96px, 14vw, 132px)", paddingBottom: "clamp(24px, 4vw, 48px)" }}
     >
       <div
         className="absolute inset-0"
