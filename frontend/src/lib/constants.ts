@@ -15,12 +15,13 @@ export const siteConfig = {
   },
 } as const;
 
+// "Today's Deals" was dropped — there's no real deals-listing page yet
+// (only single-campaign pages at /campaigns/[slug], no /deals route).
 export const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Marketplace', href: '/marketplace' },
   { label: 'Categories', href: '/categories', hasMegaMenu: true },
-  { label: "Today's Deals", href: '/deals' },
-  { label: 'Business', href: '/business' },
+  { label: 'Business', href: '/verticals' },
   { label: 'Blogs', href: '/blogs' },
 ] as const;
 
