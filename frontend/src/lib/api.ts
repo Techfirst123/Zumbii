@@ -537,3 +537,33 @@ export const newsletterApi = {
   subscribe: (email: string) =>
     api.post<{ message: string }>('/newsletter/subscribe', { email }, { auth: false }),
 };
+
+// ---- Blog ----
+
+export interface BackendBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  content: string;
+  coverImage?: string | null;
+  tags: string[];
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author?: { id: string; firstName?: string | null; lastName?: string | null; avatar?: string | null } | null;
+}
+
+export interface BlogListResponse {
+  data: BackendBlogPost[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export const blogApi = {
+  list: (query: { page?: number; limit?: number; tag?: string; search?: string } = {}) =>
+    api.get<BlogListResponse>(`/blog${toQueryString(query)}`, { auth: false }),
+  getBySlug: (slug: string) => api.get<BackendBlogPost>(`/blog/slug/${slug}`, { auth: false }),
+};

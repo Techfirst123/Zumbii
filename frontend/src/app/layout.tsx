@@ -52,6 +52,22 @@ const organizationJsonLd = {
   url: siteConfig.url,
   description: siteConfig.description,
   logo: `${siteConfig.url}/images/zumbii-logo-header-wide.png`,
+  email: siteConfig.email,
+  telephone: siteConfig.phone,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "DPT 322/3 DLF Prime Tower, Okhla Phase-1",
+    addressLocality: "New Delhi",
+    postalCode: "110020",
+    addressCountry: "IN",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: siteConfig.phone,
+    email: siteConfig.email,
+    contactType: "customer service",
+    areaServed: "IN",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
