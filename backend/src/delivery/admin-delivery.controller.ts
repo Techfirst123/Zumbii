@@ -33,6 +33,12 @@ export class AdminDeliveryController {
     return this.deliveryService.listZones();
   }
 
+  @Get('pincode-lookup/:code')
+  @ApiOperation({ summary: 'Look up city/state/area for a pincode via India Post directory' })
+  lookupPincode(@Param('code') code: string) {
+    return this.deliveryService.lookupPincode(code);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a delivery zone with its pincodes' })
   get(@Param('id') id: string) {

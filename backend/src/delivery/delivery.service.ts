@@ -16,6 +16,26 @@ export interface PincodeCheckResult {
   estimatedDeliveryDate?: string;
 }
 
+export interface PincodeLookupResult {
+  code: string;
+  found: boolean;
+  city?: string;
+  state?: string;
+  area?: string;
+  message?: string;
+}
+
+interface IndiaPostOffice {
+  Name: string;
+  District: string;
+  State: string;
+}
+
+interface IndiaPostLookupResponse {
+  Status: string;
+  PostOffice: IndiaPostOffice[] | null;
+}
+
 @Injectable()
 export class DeliveryService {
   constructor(private prisma: PrismaService) {}
@@ -77,6 +97,35 @@ export class DeliveryService {
       estimatedDeliveryDate: estimatedDeliveryDate.toISOString(),
       message: `Delivery available to ${pincode.city}.`,
     };
+  }
+
+  /**
+   * Looks up the city/state/area for a pincode via India Post's public
+   * directory (api.postalpincode.in), so admins adding a pincode to a zone
+   * don't have to type the city/state by hand. Best-effort only — a miss or
+   * an unreachable upstream just means the admin falls back to manual entry,
+   * so this never throws.
+   */
+  async lookupPincode(code: string): Promise<PincodeLookupResult> {
+    if (!/^\d{6}$/.test(code)) {
+      throw new BadRequestException('Enter a valid 6-digit pincode');
+    }
+
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${code}`);
+      if (!res.ok) {
+        return { code, found: false, message: 'Pincode lookup service is unavailable right now' };
+      }
+      const data = (await res.json()) as IndiaPostLookupResponse[];
+      const result = data?.[0];
+      const office = result?.PostOffice?.[0];
+      if (!result || result.Status !== 'Success' || !office) {
+        return { code, found: false, message: 'No location found for this pincode' };
+      }
+      return { code, found: true, city: office.District, state: office.State, area: office.Name };
+    } catch {
+      return { code, found: false, message: 'Pincode lookup service is unavailable right now' };
+    }
   }
 
   /** Used internally (checkout gating) — same rules as checkPincode, no 400 on a malformed code. */
