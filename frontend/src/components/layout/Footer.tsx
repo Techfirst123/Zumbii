@@ -117,23 +117,58 @@ export default function Footer() {
               connecting communities, and growing together.
             </p>
             <div className="mt-6 space-y-3">
-              <div className="flex items-center gap-3 text-sm text-white/60">
-                <MapPin className="h-4 w-4 shrink-0 text-gold-400" />
+              <div className="flex items-start gap-3 text-sm text-white/60">
+                <MapPin className="h-4 w-4 shrink-0 text-gold-400 mt-0.5" />
                 <span>{siteConfig.address}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-white/60">
+              <a
+                href={`tel:${siteConfig.phone.replace(/\s+/g, '')}`}
+                className="flex items-center gap-3 text-sm text-white/60 transition-colors hover:text-white"
+              >
                 <Phone className="h-4 w-4 shrink-0 text-gold-400" />
                 <span>{siteConfig.phone}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-white/60">
+              </a>
+              <a
+                href={`mailto:${siteConfig.email}`}
+                className="flex items-center gap-3 text-sm text-white/60 transition-colors hover:text-white"
+              >
                 <Mail className="h-4 w-4 shrink-0 text-gold-400" />
                 <span>{siteConfig.email}</span>
-              </div>
+              </a>
             </div>
+
+            {(hasAppStoreLink || hasGooglePlayLink) && (
+              <div className="mt-6 flex flex-wrap gap-3">
+                {hasAppStoreLink && (
+                  <Link
+                    href={siteConfig.download.appStore}
+                    className="flex items-center gap-2.5 rounded-xl bg-black px-3.5 py-2.5 text-white transition-opacity hover:opacity-90"
+                  >
+                    <Smartphone className="h-5 w-5" />
+                    <div className="text-left text-[10px] leading-tight">
+                      <span className="block opacity-70">Download on</span>
+                      <span className="text-xs font-semibold">App Store</span>
+                    </div>
+                  </Link>
+                )}
+                {hasGooglePlayLink && (
+                  <Link
+                    href={siteConfig.download.googlePlay}
+                    className="flex items-center gap-2.5 rounded-xl bg-black px-3.5 py-2.5 text-white transition-opacity hover:opacity-90"
+                  >
+                    <Smartphone className="h-5 w-5" />
+                    <div className="text-left text-[10px] leading-tight">
+                      <span className="block opacity-70">Get it on</span>
+                      <span className="text-xs font-semibold">Google Play</span>
+                    </div>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Link columns */}
-          {[footerLinks.company, footerLinks.quickLinks].map(
+          {[footerLinks.shop, footerLinks.company, footerLinks.forBusiness].map(
             (section) => (
               <div key={section.title}>
                 <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
@@ -154,41 +189,6 @@ export default function Footer() {
                 </ul>
               </div>
             )
-          )}
-
-          {/* Download */}
-          {(hasAppStoreLink || hasGooglePlayLink) && (
-            <div>
-              <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
-                Download App
-              </h4>
-              <div className="flex flex-col gap-3">
-                {hasAppStoreLink && (
-                  <Link
-                    href={siteConfig.download.appStore}
-                    className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
-                  >
-                    <Smartphone className="h-6 w-6" />
-                    <div className="text-left text-xs leading-tight">
-                      <span className="block opacity-70">Download on</span>
-                      <span className="text-sm font-semibold">App Store</span>
-                    </div>
-                  </Link>
-                )}
-                {hasGooglePlayLink && (
-                  <Link
-                    href={siteConfig.download.googlePlay}
-                    className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
-                  >
-                    <Smartphone className="h-6 w-6" />
-                    <div className="text-left text-xs leading-tight">
-                      <span className="block opacity-70">Get it on</span>
-                      <span className="text-sm font-semibold">Google Play</span>
-                    </div>
-                  </Link>
-                )}
-              </div>
-            </div>
           )}
         </div>
       </div>

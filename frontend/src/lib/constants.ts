@@ -218,21 +218,28 @@ export const businessVerticals = [
 // Returns, Shipping Info, FAQ, Contact Us, Report a Problem) are left out
 // rather than pointing anywhere. Add them back once those pages are built.
 export const footerLinks = {
+  shop: {
+    title: 'Shop',
+    links: [
+      { label: 'Home', href: '/' },
+      { label: 'Marketplace', href: '/marketplace' },
+      { label: 'Categories', href: '/categories' },
+    ],
+  },
   company: {
     title: 'Company',
     links: [
       { label: 'About Zumbii', href: '/about' },
       { label: 'Blog', href: '/blogs' },
+      { label: 'Franchise', href: '/franchise' },
     ],
   },
-  quickLinks: {
-    title: 'Quick Links',
+  forBusiness: {
+    title: 'For Business',
     links: [
-      { label: 'Home', href: '/' },
-      { label: 'Marketplace', href: '/marketplace' },
       { label: 'Sell on Zumbii', href: '/sell' },
-      { label: 'Franchise', href: '/franchise' },
       { label: 'Business Verticals', href: '/verticals' },
+      { label: 'B2B Solutions', href: '/b2b' },
     ],
   },
 } as const;
