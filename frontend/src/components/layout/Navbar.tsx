@@ -308,17 +308,17 @@ export default function Navbar() {
                   aria-label="User menu"
                 >
                   <div className={clsx(
-                    'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold',
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
                     scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
                   )}>
                     {initial}
                   </div>
                   {displayName && (
-                    <span className="max-w-[7rem] truncate text-sm font-medium">{displayName}</span>
+                    <span className="min-w-0 max-w-[7rem] truncate text-sm font-medium">{displayName}</span>
                   )}
                   <ChevronDown
                     className={clsx(
-                      'hidden h-3.5 w-3.5 transition-transform duration-200 lg:block',
+                      'hidden h-3.5 w-3.5 shrink-0 transition-transform duration-200 lg:block',
                       userMenuOpen && 'rotate-180'
                     )}
                   />
@@ -573,8 +573,10 @@ export default function Navbar() {
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-text-secondary transition-colors hover:bg-zumbii-50 hover:text-zumbii-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <User className="h-4 w-4" />
-                    {isLoggedIn ? (displayName || 'My Account') : 'Sign In / Register'}
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {isLoggedIn ? (displayName || 'My Account') : 'Sign In / Register'}
+                    </span>
                   </Link>
                   {isLoggedIn && (
                     <button
