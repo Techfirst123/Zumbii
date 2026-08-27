@@ -530,3 +530,10 @@ export const couponsApi = {
   validate: (code: string, subtotal: number) =>
     api.post<CouponValidationResult>('/coupons/validate', { code, subtotal }, { auth: false }),
 };
+
+// ---- Newsletter ----
+
+export const newsletterApi = {
+  subscribe: (email: string) =>
+    api.post<{ message: string }>('/newsletter/subscribe', { email }, { auth: false }),
+};

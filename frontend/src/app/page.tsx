@@ -24,6 +24,7 @@ import {
   Quote,
   Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Button from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import Card from "@/components/ui/Card";
@@ -32,7 +33,7 @@ import SectionHeader from "@/components/ui/section-header";
 import { ProductCard } from "@/components/ui/ProductCard";
 import PromoBanner from "@/components/home/PromoBanner";
 import CampaignBanners from "@/components/home/CampaignBanners";
-import { productsApi, categoriesApi, resolveImageUrl, ApiError, type BackendCategory } from "@/lib/api";
+import { productsApi, categoriesApi, newsletterApi, resolveImageUrl, ApiError, type BackendCategory } from "@/lib/api";
 import { mapBackendProduct } from "@/lib/adapters";
 import { categoryVisual } from "@/lib/categoryVisuals";
 import type { Product } from "@/types";
@@ -648,6 +649,22 @@ function TestimonialsSection() {
 
 function NewsletterSection() {
   const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email) return;
+    setSubscribing(true);
+    try {
+      await newsletterApi.subscribe(email);
+      setEmail("");
+      toast.success("Subscribed! Watch your inbox for updates.");
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : "Failed to subscribe. Please try again.");
+    } finally {
+      setSubscribing(false);
+    }
+  }
 
   return (
     <section className="py-20 lg:py-28 bg-surface-secondary">
@@ -662,7 +679,7 @@ function NewsletterSection() {
               subtitle="Get weekly insights on market trends, new suppliers, franchise opportunities, and exclusive B2B deals delivered to your inbox."
             />
             <form
-              onSubmit={(e) => { e.preventDefault(); setEmail(""); }}
+              onSubmit={handleSubmit}
               className="mt-8 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
             >
               <div className="flex-1 relative">
@@ -676,13 +693,12 @@ function NewsletterSection() {
                   icon={<Mail className="w-4 h-4" />}
                 />
               </div>
-              <Button type="submit" variant="gold" size="lg" className="h-12 shrink-0">
-                Subscribe <Send className="w-4 h-4" />
+              <Button type="submit" variant="gold" size="lg" className="h-12 shrink-0" disabled={subscribing}>
+                {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Subscribe <Send className="w-4 h-4" /></>}
               </Button>
             </form>
             <p className="mt-4 text-xs text-text-tertiary">
-              No spam, ever. Unsubscribe anytime. Read our{" "}
-              <Link href="/privacy" className="text-zumbii-600 hover:underline">Privacy Policy</Link>.
+              No spam, ever. Unsubscribe anytime.
             </p>
           </div>
         </FadeInSection>

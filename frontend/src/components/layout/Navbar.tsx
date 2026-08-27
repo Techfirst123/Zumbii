@@ -300,7 +300,7 @@ export default function Navbar() {
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={clsx(
-                    'flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors',
+                    'flex items-center gap-1.5 rounded-xl p-1.5 pr-2 transition-colors',
                     scrolled
                       ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
                       : 'text-white/75 hover:bg-white/10 hover:text-white'
@@ -313,9 +313,6 @@ export default function Navbar() {
                   )}>
                     {initial}
                   </div>
-                  {displayName && (
-                    <span className="min-w-0 max-w-[7rem] truncate text-sm font-medium">{displayName}</span>
-                  )}
                   <ChevronDown
                     className={clsx(
                       'hidden h-3.5 w-3.5 shrink-0 transition-transform duration-200 lg:block',
@@ -575,7 +572,7 @@ export default function Navbar() {
                   >
                     <User className="h-4 w-4 shrink-0" />
                     <span className="min-w-0 flex-1 truncate">
-                      {isLoggedIn ? (displayName || 'My Account') : 'Sign In / Register'}
+                      {isLoggedIn ? 'My Account' : 'Sign In / Register'}
                     </span>
                   </Link>
                   {isLoggedIn && (

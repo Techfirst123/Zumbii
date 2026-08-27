@@ -3,40 +3,41 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
-  Youtube,
   Mail,
   MapPin,
   Phone,
   ChevronRight,
   ArrowRight,
   Check,
+  Loader2,
   Smartphone,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { siteConfig, footerLinks, supportLinks } from '@/lib/constants';
+import { newsletterApi, ApiError } from '@/lib/api';
 import clsx from 'clsx';
 
-const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
-  Youtube,
-};
+const hasAppStoreLink = siteConfig.download.appStore !== '#';
+const hasGooglePlayLink = siteConfig.download.googlePlay !== '#';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+    if (!email) return;
+    setSubscribing(true);
+    try {
+      await newsletterApi.subscribe(email);
       setSubscribed(true);
       setEmail('');
       setTimeout(() => setSubscribed(false), 3000);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to subscribe. Please try again.');
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -71,8 +72,9 @@ export default function Footer() {
               </div>
               <button
                 type="submit"
+                disabled={subscribing}
                 className={clsx(
-                  'flex h-12 items-center gap-2 rounded-xl px-6 font-medium transition-all',
+                  'flex h-12 items-center gap-2 rounded-xl px-6 font-medium transition-all disabled:opacity-70',
                   subscribed
                     ? 'bg-leaf-500 text-white'
                     : 'bg-gold-500 text-zumbii-950 hover:bg-gold-600 active:bg-gold-700'
@@ -83,6 +85,8 @@ export default function Footer() {
                     <Check className="h-4 w-4" />
                     Done
                   </>
+                ) : subscribing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
                     Subscribe
@@ -97,7 +101,7 @@ export default function Footer() {
 
       {/* Main footer */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand column */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2">
@@ -129,7 +133,7 @@ export default function Footer() {
           </div>
 
           {/* Link columns */}
-          {[footerLinks.company, footerLinks.quickLinks, footerLinks.customerService].map(
+          {[footerLinks.company, footerLinks.quickLinks].map(
             (section) => (
               <div key={section.title}>
                 <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
@@ -152,53 +156,40 @@ export default function Footer() {
             )
           )}
 
-          {/* Connect & Download */}
-          <div>
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
-              Connect
-            </h4>
-            <div className="mb-6 flex gap-3">
-              {footerLinks.connect.links.map((link) => {
-                const Icon = socialIcons[link.icon] || Facebook;
-                return (
+          {/* Download */}
+          {(hasAppStoreLink || hasGooglePlayLink) && (
+            <div>
+              <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
+                Download App
+              </h4>
+              <div className="flex flex-col gap-3">
+                {hasAppStoreLink && (
                   <Link
-                    key={link.label}
-                    href={link.href}
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-all hover:bg-gold-500 hover:text-zumbii-950"
-                    aria-label={link.label}
+                    href={siteConfig.download.appStore}
+                    className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
                   >
-                    <Icon className="h-4 w-4" />
+                    <Smartphone className="h-6 w-6" />
+                    <div className="text-left text-xs leading-tight">
+                      <span className="block opacity-70">Download on</span>
+                      <span className="text-sm font-semibold">App Store</span>
+                    </div>
                   </Link>
-                );
-              })}
+                )}
+                {hasGooglePlayLink && (
+                  <Link
+                    href={siteConfig.download.googlePlay}
+                    className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
+                  >
+                    <Smartphone className="h-6 w-6" />
+                    <div className="text-left text-xs leading-tight">
+                      <span className="block opacity-70">Get it on</span>
+                      <span className="text-sm font-semibold">Google Play</span>
+                    </div>
+                  </Link>
+                )}
+              </div>
             </div>
-
-            <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gold-500">
-              Download App
-            </h4>
-            <div className="flex flex-col gap-3">
-              <Link
-                href={siteConfig.download.appStore}
-                className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
-              >
-                <Smartphone className="h-6 w-6" />
-                <div className="text-left text-xs leading-tight">
-                  <span className="block opacity-70">Download on</span>
-                  <span className="text-sm font-semibold">App Store</span>
-                </div>
-              </Link>
-              <Link
-                href={siteConfig.download.googlePlay}
-                className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-white transition-opacity hover:opacity-90"
-              >
-                <Smartphone className="h-6 w-6" />
-                <div className="text-left text-xs leading-tight">
-                  <span className="block opacity-70">Get it on</span>
-                  <span className="text-sm font-semibold">Google Play</span>
-                </div>
-              </Link>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -210,7 +201,9 @@ export default function Footer() {
               <span>
                 &copy; {currentYear} {siteConfig.name}. All rights reserved.
               </span>
-              <span className="hidden text-white/20 lg:inline">|</span>
+              {supportLinks.length > 0 && (
+                <span className="hidden text-white/20 lg:inline">|</span>
+              )}
               {supportLinks.map((link) => (
                 <Link
                   key={link.label}

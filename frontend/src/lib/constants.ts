@@ -7,13 +7,8 @@ export const siteConfig = {
   email: 'info@zumbii.com',
   phone: '+91 7050193876',
   address: 'DPT 322/3 Dlf Prime Tower Okhla Phase-1 110020 new delhi, India',
-  social: {
-    facebook: '#',
-    twitter: '#',
-    instagram: '#',
-    linkedin: '#',
-    youtube: '#',
-  },
+  // '#' means no real store listing yet — Footer only renders a download
+  // button once its link here is replaced with a real App Store/Play URL.
   download: {
     appStore: '#',
     googlePlay: '#',
@@ -217,15 +212,16 @@ export const businessVerticals = [
   },
 ] as const;
 
+// Only pages that actually exist in the app — links to routes that don't
+// have a real page yet (Careers, Press, Investor Relations, Help Center,
+// Returns, Shipping Info, FAQ, Contact Us, Report a Problem) are left out
+// rather than pointing anywhere. Add them back once those pages are built.
 export const footerLinks = {
   company: {
     title: 'Company',
     links: [
       { label: 'About Zumbii', href: '/about' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Press & Media', href: '/press' },
       { label: 'Blog', href: '/blogs' },
-      { label: 'Investor Relations', href: '/investors' },
     ],
   },
   quickLinks: {
@@ -235,37 +231,12 @@ export const footerLinks = {
       { label: 'Marketplace', href: '/marketplace' },
       { label: 'Sell on Zumbii', href: '/sell' },
       { label: 'Franchise', href: '/franchise' },
-      { label: 'Business Verticals', href: '/business' },
-      { label: 'Today\'s Deals', href: '/deals' },
-    ],
-  },
-  customerService: {
-    title: 'Customer Service',
-    links: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Returns & Refunds', href: '/returns' },
-      { label: 'Shipping Info', href: '/shipping' },
-      { label: 'FAQ', href: '/faq' },
-      { label: 'Contact Us', href: '/contact' },
-      { label: 'Report a Problem', href: '/report' },
-    ],
-  },
-  connect: {
-    title: 'Connect',
-    links: [
-      { label: 'Facebook', href: '#', icon: 'Facebook' },
-      { label: 'Twitter / X', href: '#', icon: 'Twitter' },
-      { label: 'Instagram', href: '#', icon: 'Instagram' },
-      { label: 'LinkedIn', href: '#', icon: 'Linkedin' },
-      { label: 'YouTube', href: '#', icon: 'Youtube' },
+      { label: 'Business Verticals', href: '/verticals' },
     ],
   },
 } as const;
 
-export const supportLinks = [
-  { label: 'Terms of Service', href: '/terms' },
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Cookie Policy', href: '/cookies' },
-  { label: 'Grievance Policy', href: '/grievance' },
-  { label: 'Sitemap', href: '/sitemap' },
-] as const;
+// Terms of Service, Privacy Policy, Cookie Policy, Grievance Policy, and
+// Sitemap have no real page yet, so the bottom bar has no legal links for
+// now — add them here once those pages exist.
+export const supportLinks: { label: string; href: string }[] = [];

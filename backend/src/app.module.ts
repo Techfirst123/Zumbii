@@ -21,6 +21,7 @@ import { DeliveryModule } from './delivery/delivery.module';
 import { OtpModule } from './otp/otp.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { CouponsModule } from './coupons/coupons.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { CouponsModule } from './coupons/coupons.module';
     OtpModule,
     WishlistModule,
     CouponsModule,
+    NewsletterModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
