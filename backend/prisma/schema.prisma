@@ -82,6 +82,12 @@ enum AdminRole {
   FRANCHISE_MANAGER
 }
 
+enum ZoneStatus {
+  ACTIVE
+  INACTIVE
+  COMING_SOON
+}
+
 model AdminUser {
   id               String    @id @default(uuid())
   email            String    @unique
@@ -183,9 +189,17 @@ model Product {
   slug          String   @unique
   description   String?
   shortDesc     String?
+  // GST-inclusive — this is the exact final price the customer pays.
+  // GST is never added on top anywhere in the storefront; it only ever
+  // appears as a back-calculated break-up at checkout/on the invoice.
   price         Decimal  @db.Decimal(10, 2)
   comparePrice  Decimal? @db.Decimal(10, 2)
   costPrice     Decimal? @db.Decimal(10, 2)
+  // Indian GST slab (0/5/12/18/28) set by the seller/admin at upload time —
+  // varies by category (e.g. most food staples 0-5%, packaged/branded and
+  // cleaning products often 12-18%). Enforced server-side in the DTO, not
+  // just as a UI dropdown.
+  gstRate       Int      @default(18)
   sku           String   @unique
   barcode       String?
   quantity      Int      @default(0)
@@ -382,6 +396,9 @@ model OrderItem {
   price       Decimal  @db.Decimal(10, 2)
   quantity    Int
   total       Decimal  @db.Decimal(10, 2)
+  // Snapshotted from the product at order time, so a later change to a
+  // product's GST rate never rewrites the tax break-up on past invoices.
+  gstRate     Int      @default(18)
   image       String?
   createdAt   DateTime @default(now())
 
@@ -529,18 +546,37 @@ model RFQResponse {
   @@map("rfq_responses")
 }
 
+// A named service area (e.g. "Delhi NCR") covering many pincodes. The zone
+// carries the real serviceability state and shared logistics settings;
+// individual pincodes just resolve to one. A pincode with no zone (or a
+// zone that isn't ACTIVE) blocks checkout — see DeliveryService.
+model DeliveryZone {
+  id           String     @id @default(uuid())
+  name         String
+  status       ZoneStatus @default(ACTIVE)
+  codAvailable Boolean    @default(true)
+  deliveryDays Int        @default(5)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  pincodes     Pincode[]
+
+  @@map("delivery_zones")
+}
+
 model Pincode {
-  id            String   @id @default(uuid())
-  code          String   @unique
-  city          String
-  state         String
-  isServiceable Boolean  @default(true)
-  codAvailable  Boolean  @default(true)
-  deliveryDays  Int      @default(5)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(uuid())
+  code      String   @unique
+  city      String
+  state     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zoneId    String?
+  zone      DeliveryZone? @relation(fields: [zoneId], references: [id], onDelete: SetNull)
 
   @@index([code])
+  @@index([zoneId])
   @@map("pincodes")
 }
 

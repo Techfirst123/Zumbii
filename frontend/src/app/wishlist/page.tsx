@@ -85,6 +85,7 @@ function WishlistPage() {
         name: item.product.name,
         image: resolveImageUrl(item.product.images[0]),
         price: Number(item.product.price),
+        gstRate: item.product.gstRate,
         quantity: 1,
         maxQuantity: 99,
         seller: item.product.seller || '',

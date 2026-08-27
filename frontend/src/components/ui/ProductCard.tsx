@@ -55,6 +55,7 @@ function ProductCard({ product, className, onAddToCart, onQuickView }: ProductCa
       name: product.name,
       image: primaryImage,
       price: displayPrice,
+      gstRate: product.gstRate,
       quantity: product.moq > 1 ? product.moq : 1,
       maxQuantity: Math.max(cardStock, 1),
       seller: product.seller?.businessName || '',

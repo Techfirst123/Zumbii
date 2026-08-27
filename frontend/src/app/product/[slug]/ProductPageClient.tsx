@@ -28,7 +28,6 @@ import {
   Share2,
   MapPin,
   Package,
-  IndianRupee,
   FileDown,
   HelpCircle,
   ChevronDown,
@@ -68,7 +67,7 @@ const faqs = [
   },
   {
     question: 'Is this product GST billed?',
-    answer: 'Yes, all products on Zumbii come with a valid GST invoice. The GST rate for this product is 18%. You can use the GST input tax credit for business purchases.',
+    answer: 'Yes, all products on Zumbii come with a valid GST invoice. The price shown already includes GST, and a full tax break-up by rate is available on your order invoice. You can use the GST input tax credit for business purchases.',
   },
   {
     question: 'What is the minimum order quantity for wholesale?',
@@ -666,9 +665,6 @@ export default function ProductPageClient() {
     ? Math.round(((strikePrice - displayPrice) / strikePrice) * 100)
     : 0;
 
-  const gstAmount = Math.round(displayPrice * (product.gstRate / 100));
-  const totalWithGst = displayPrice + gstAmount;
-
   const ratingBreakdown = [5, 4, 3, 2, 1].map((stars) => {
     const count = reviews.filter((r) => r.rating === stars).length;
     return {
@@ -691,6 +687,7 @@ export default function ProductPageClient() {
       name: product.name,
       image: effectiveImages[0] ?? product.images[0],
       price: displayPrice,
+      gstRate: product.gstRate,
       quantity,
       maxQuantity: Math.max(effectiveStock, 1),
       seller: product.seller.businessName,
@@ -794,13 +791,7 @@ export default function ProductPageClient() {
                   )}
                 </div>
                 <p className="text-xs text-text-tertiary">
-                  +₹{gstAmount.toLocaleString('en-IN')} GST ({product.gstRate}%)
-                </p>
-                <p className="text-sm">
-                  <span className="text-text-secondary">Total incl. GST: </span>
-                  <span className="font-semibold text-text-primary">
-                    ₹{totalWithGst.toLocaleString('en-IN')}
-                  </span>
+                  Inclusive of all taxes
                 </p>
 
                 <div className="flex flex-wrap gap-4 pt-1 text-sm">
@@ -811,10 +802,6 @@ export default function ProductPageClient() {
                   <div className="flex items-center gap-1.5 text-text-secondary">
                     <Ruler className="w-4 h-4 text-text-tertiary" />
                     Available: <span className="font-medium text-text-primary">{effectiveStock.toLocaleString()} units</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-text-secondary">
-                    <IndianRupee className="w-4 h-4 text-text-tertiary" />
-                    GST: <span className="font-medium text-text-primary">{product.gstRate}%</span>
                   </div>
                   {effectiveStock > 0 && effectiveStock <= 10 && (
                     <span className="text-amber-600 font-medium text-xs flex items-center gap-1">

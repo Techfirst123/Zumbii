@@ -75,7 +75,7 @@ export function mapBackendProduct(p: BackendProduct): Product {
       followerCount: 0,
     },
     sku: p.sku,
-    gstRate: 18,
+    gstRate: p.gstRate ?? 0,
     moq: p.minOrderQty || 1,
     stock: p.quantity,
     availableQuantity: p.quantity,

@@ -22,6 +22,7 @@ export class WishlistService {
         slug: item.product.slug,
         price: item.product.price,
         comparePrice: item.product.comparePrice,
+        gstRate: item.product.gstRate,
         images: item.product.images,
         rating: item.product.rating,
         reviewCount: item.product.reviewCount,

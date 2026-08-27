@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from '../products/products.service';
 import { CouponsService } from '../coupons/coupons.service';
+import { DeliveryService } from '../delivery/delivery.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order-status.dto';
 import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
@@ -23,7 +24,6 @@ const SHIPPING_RATES: Record<string, number> = {
   sameday: 299,
 };
 const DEFAULT_SHIPPING_METHOD = 'standard';
-const GST_RATE = 0.12;
 
 @Injectable()
 export class OrdersService {
@@ -31,6 +31,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private productsService: ProductsService,
     private couponsService: CouponsService,
+    private deliveryService: DeliveryService,
   ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
@@ -40,6 +41,17 @@ export class OrdersService {
 
     if (!address) {
       throw new BadRequestException('Address not found');
+    }
+
+    // Re-validate serviceability here even though the storefront already
+    // checked it when the pincode was entered — the cart may have been built
+    // up before an address existed, or the admin may have changed a zone's
+    // status in between. This is the last gate before payment.
+    const isServiceable = await this.deliveryService.isServiceable(address.zipCode);
+    if (!isServiceable) {
+      throw new BadRequestException(
+        `We don't currently deliver to ${address.city} (${address.zipCode}). Please choose a different address.`,
+      );
     }
 
     const products = await this.prisma.product.findMany({
@@ -118,6 +130,7 @@ export class OrdersService {
         price: unitPrice,
         quantity: item.quantity,
         total,
+        gstRate: product.gstRate,
         image: variant?.images[0] || product.images[0] || null,
       });
 
@@ -138,8 +151,18 @@ export class OrdersService {
 
     const shippingMethod = dto.shippingMethod ?? DEFAULT_SHIPPING_METHOD;
     const shippingCost = SHIPPING_RATES[shippingMethod] ?? SHIPPING_RATES[DEFAULT_SHIPPING_METHOD];
-    const taxAmount = Math.round((subtotal - discountAmount) * GST_RATE);
-    const total = subtotal - discountAmount + shippingCost + taxAmount;
+
+    // Every item price above is already GST-inclusive — GST is never added on
+    // top. taxAmount here is purely the back-calculated informational total
+    // (taxable value = price ÷ (1 + rate/100)) shown as a break-up on the
+    // invoice; it is NOT added again when computing the order total.
+    const taxAmount = Math.round(
+      orderItems.reduce((sum, item) => {
+        const taxableValue = item.total / (1 + item.gstRate / 100);
+        return sum + (item.total - taxableValue);
+      }, 0),
+    );
+    const total = subtotal - discountAmount + shippingCost;
 
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 

@@ -61,9 +61,8 @@ function CartPage() {
 
   const shipping = cartItems.length > 0 ? 99 : 0;
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = Math.round(subtotal * 0.12);
   const discount = couponDiscount;
-  const total = subtotal + shipping + tax - discount;
+  const total = subtotal + shipping - discount;
 
   // Re-validate a coupon carried over from a previous visit (subtotal may have
   // changed since — e.g. items removed — so the discount can't just be trusted).
@@ -348,10 +347,6 @@ function CartPage() {
                         )}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">Tax (GST 12%)</span>
-                      <span className="text-text-primary font-medium">₹{tax.toLocaleString('en-IN')}</span>
-                    </div>
                     {discount > 0 && (
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1.5 text-leaf-600">
@@ -366,6 +361,7 @@ function CartPage() {
                       <span className="text-base font-bold text-text-primary">Total</span>
                       <span className="text-lg font-bold text-zumbii-600">₹{total.toLocaleString('en-IN')}</span>
                     </div>
+                    <p className="text-[11px] text-text-tertiary text-right">Inclusive of all taxes</p>
                   </div>
                   <Link href="/checkout">
                     <Button size="lg" className="w-full mt-5">

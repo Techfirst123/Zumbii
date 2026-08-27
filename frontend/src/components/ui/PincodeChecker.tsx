@@ -102,11 +102,21 @@ export function PincodeChecker() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5"
+            className={
+              result.status === 'COMING_SOON'
+                ? 'p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2.5'
+                : 'p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5'
+            }
           >
-            <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-amber-800">
-              Sorry, we currently don&apos;t deliver to this pincode.
+            <AlertCircle
+              className={
+                result.status === 'COMING_SOON'
+                  ? 'w-4 h-4 text-blue-600 mt-0.5 shrink-0'
+                  : 'w-4 h-4 text-amber-600 mt-0.5 shrink-0'
+              }
+            />
+            <p className={result.status === 'COMING_SOON' ? 'text-sm text-blue-800' : 'text-sm text-amber-800'}>
+              {result.message}
             </p>
           </motion.div>
         )}

@@ -46,9 +46,39 @@ import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAuthGuard } from '@/hooks/useRequireAuth';
-import { addressApi, ordersApi, couponsApi, ApiError, type BackendAddress, type AddressPayload } from '@/lib/api';
+import {
+  addressApi,
+  ordersApi,
+  couponsApi,
+  deliveryApi,
+  ApiError,
+  type BackendAddress,
+  type AddressPayload,
+  type BackendOrder,
+} from '@/lib/api';
 
 type Step = 'address' | 'shipping' | 'payment' | 'review';
+
+interface GstBreakdownRow {
+  rate: number;
+  taxable: number;
+  gst: number;
+}
+
+function computeGstBreakdown(items: { total: number; gstRate: number }[]): GstBreakdownRow[] {
+  const groups = new Map<number, { taxable: number; gst: number }>();
+  for (const item of items) {
+    const taxable = item.total / (1 + item.gstRate / 100);
+    const gst = item.total - taxable;
+    const g = groups.get(item.gstRate) ?? { taxable: 0, gst: 0 };
+    g.taxable += taxable;
+    g.gst += gst;
+    groups.set(item.gstRate, g);
+  }
+  return Array.from(groups.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([rate, { taxable, gst }]) => ({ rate, taxable: Math.round(taxable), gst: Math.round(gst) }));
+}
 
 const emptyAddressForm: AddressPayload = {
   label: 'Home',
@@ -125,7 +155,10 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [placedOrder, setPlacedOrder] = useState<BackendOrder | null>(null);
   const [placeOrderError, setPlaceOrderError] = useState('');
+  const [addressPincodeError, setAddressPincodeError] = useState('');
+  const [checkingPincode, setCheckingPincode] = useState(false);
   const [showFullSummary, setShowFullSummary] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
@@ -136,8 +169,10 @@ function CheckoutPage() {
 
   const stepIndex = steps.findIndex((s) => s.id === currentStep);
   const shippingCost = shippingMethods.find((s) => s.id === selectedShipping)?.price ?? 0;
-  const tax = Math.round((subtotal - couponDiscount) * 0.12);
-  const total = subtotal - couponDiscount + shippingCost + tax;
+  const total = subtotal - couponDiscount + shippingCost;
+  const gstBreakdown = computeGstBreakdown(
+    cartItems.map((item) => ({ total: item.price * item.quantity, gstRate: item.gstRate }))
+  );
 
   useEffect(() => {
     if (cartItems.length === 0 && !orderPlaced) {
@@ -256,6 +291,21 @@ function CheckoutPage() {
 
   const handleSaveAddress = async () => {
     if (!validateAddressForm()) return;
+    setAddressPincodeError('');
+    setCheckingPincode(true);
+    try {
+      const check = await deliveryApi.checkPincode(newAddress.zipCode);
+      if (!check.serviceable) {
+        setAddressPincodeError(check.message);
+        setCheckingPincode(false);
+        return;
+      }
+    } catch (err) {
+      setAddressPincodeError(err instanceof ApiError ? err.message : 'Could not verify delivery to this pincode');
+      setCheckingPincode(false);
+      return;
+    }
+    setCheckingPincode(false);
     setSavingAddress(true);
     try {
       const saved = editingAddress
@@ -284,6 +334,16 @@ function CheckoutPage() {
     setPlacing(true);
     setPlaceOrderError('');
     try {
+      const address = addresses.find((a) => a.id === selectedAddress);
+      if (address) {
+        const check = await deliveryApi.checkPincode(address.zipCode);
+        if (!check.serviceable) {
+          setPlaceOrderError(check.message);
+          toast.error(check.message);
+          setPlacing(false);
+          return;
+        }
+      }
       const order = await ordersApi.create({
         addressId: selectedAddress,
         shippingMethod: selectedShipping,
@@ -296,6 +356,7 @@ function CheckoutPage() {
       });
       setOrderPlaced(true);
       setOrderNumber(order.orderNumber);
+      setPlacedOrder(order);
       clearCart();
       toast.success('Order placed successfully!');
     } catch (err) {
@@ -392,7 +453,7 @@ function CheckoutPage() {
           variant="outline"
           size="sm"
           className="shrink-0"
-          onClick={() => { setShowAddressForm(true); setEditingAddress(null); setNewAddress(emptyAddressForm); setErrors({}); }}
+          onClick={() => { setShowAddressForm(true); setEditingAddress(null); setNewAddress(emptyAddressForm); setErrors({}); setAddressPincodeError(''); }}
         >
           <Plus className="w-4 h-4" />
           Add New
@@ -495,7 +556,7 @@ function CheckoutPage() {
             </div>
             <Input label="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} error={errors.city} placeholder="Mumbai" />
             <Input label="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} error={errors.state} placeholder="Maharashtra" />
-            <Input label="Pincode" value={newAddress.zipCode} onChange={(e) => setNewAddress({ ...newAddress, zipCode: e.target.value.replace(/\D/g, '').slice(0, 6) })} error={errors.zipCode} placeholder="400069" />
+            <Input label="Pincode" value={newAddress.zipCode} onChange={(e) => { setNewAddress({ ...newAddress, zipCode: e.target.value.replace(/\D/g, '').slice(0, 6) }); setAddressPincodeError(''); }} error={errors.zipCode} placeholder="400069" />
             <div>
               <label className="block text-sm font-medium text-text-primary mb-1.5">Address Type</label>
               <div className="flex flex-wrap gap-2">
@@ -518,9 +579,15 @@ function CheckoutPage() {
               </div>
             </div>
           </div>
+          {addressPincodeError && (
+            <div className="mt-4 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{addressPincodeError}</span>
+            </div>
+          )}
           <div className="flex justify-end gap-3 mt-6">
-            <Button variant="ghost" size="md" onClick={() => { setShowAddressForm(false); setErrors({}); }}>Cancel</Button>
-            <Button size="md" onClick={handleSaveAddress} loading={savingAddress}>Save Address</Button>
+            <Button variant="ghost" size="md" onClick={() => { setShowAddressForm(false); setErrors({}); setAddressPincodeError(''); }}>Cancel</Button>
+            <Button size="md" onClick={handleSaveAddress} loading={savingAddress || checkingPincode}>Save Address</Button>
           </div>
         </Card>
       )}
@@ -844,10 +911,6 @@ function CheckoutPage() {
                 <span className="text-text-secondary">Shipping</span>
                 <span className="text-text-primary">₹{shippingCost.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Tax (GST 12%)</span>
-                <span className="text-text-primary">₹{tax.toLocaleString('en-IN')}</span>
-              </div>
               {couponDiscount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-leaf-600">Discount {appliedCouponCode ? `(${appliedCouponCode})` : ''}</span>
@@ -859,7 +922,35 @@ function CheckoutPage() {
                 <span className="font-bold text-text-primary">Total</span>
                 <span className="font-bold text-zumbii-600">₹{total.toLocaleString('en-IN')}</span>
               </div>
+              <p className="text-[11px] text-text-tertiary">Price shown is inclusive of all taxes.</p>
             </div>
+          </Card>
+
+          <Card className="p-4 sm:p-5" hover={false}>
+            <div className="flex items-center gap-2 mb-3">
+              <IndianRupee className="w-4 h-4 text-zumbii-600" />
+              <h3 className="text-sm font-semibold text-text-primary">Tax Break-up (GST)</h3>
+            </div>
+            <div className="space-y-2 text-sm">
+              {gstBreakdown.map((row) => (
+                <div key={row.rate} className="flex justify-between">
+                  <span className="text-text-secondary">
+                    GST @{row.rate}% (on ₹{row.taxable.toLocaleString('en-IN')})
+                  </span>
+                  <span className="text-text-primary">₹{row.gst.toLocaleString('en-IN')}</span>
+                </div>
+              ))}
+              <hr className="border-border" />
+              <div className="flex justify-between font-medium">
+                <span className="text-text-primary">Total GST</span>
+                <span className="text-text-primary">
+                  ₹{gstBreakdown.reduce((sum, r) => sum + r.gst, 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+            <p className="text-[11px] text-text-tertiary mt-3">
+              GST is already included in the item prices above — this is a break-up for your records, not an additional charge.
+            </p>
           </Card>
         </div>
 
@@ -920,6 +1011,41 @@ function CheckoutPage() {
           <Copy className="w-4 h-4" />
         </button>
       </motion.div>
+      {placedOrder && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mt-6 max-w-sm mx-auto text-left"
+        >
+          <Card className="p-4 sm:p-5" hover={false}>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Tax Invoice Break-up</h3>
+            <div className="space-y-2 text-sm">
+              {computeGstBreakdown(
+                placedOrder.items.map((item) => ({ total: Number(item.total), gstRate: item.gstRate }))
+              ).map((row) => (
+                <div key={row.rate} className="flex justify-between">
+                  <span className="text-text-secondary">
+                    GST @{row.rate}% (on ₹{row.taxable.toLocaleString('en-IN')})
+                  </span>
+                  <span className="text-text-primary">₹{row.gst.toLocaleString('en-IN')}</span>
+                </div>
+              ))}
+              <hr className="border-border" />
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Total GST (incl. in price)</span>
+                <span className="text-text-primary font-medium">
+                  ₹{Number(placedOrder.taxAmount).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="flex justify-between text-base">
+                <span className="font-bold text-text-primary">Order Total</span>
+                <span className="font-bold text-zumbii-600">₹{Number(placedOrder.total).toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1063,10 +1189,6 @@ function CheckoutPage() {
                     <span className="text-text-secondary">Shipping</span>
                     <span className="text-text-primary font-medium">₹{shippingCost.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-secondary">Tax</span>
-                    <span className="text-text-primary font-medium">₹{tax.toLocaleString('en-IN')}</span>
-                  </div>
                   {couponDiscount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-leaf-600">Discount {appliedCouponCode ? `(${appliedCouponCode})` : ''}</span>
@@ -1078,6 +1200,7 @@ function CheckoutPage() {
                     <span className="font-bold text-text-primary">Total</span>
                     <span className="font-bold text-zumbii-600 text-base">₹{total.toLocaleString('en-IN')}</span>
                   </div>
+                  <p className="text-[11px] text-text-tertiary text-right">Inclusive of all taxes</p>
                 </div>
               </Card>
               <div className="mt-4 p-4 rounded-2xl bg-leaf-50 border border-leaf-100 flex items-start gap-3">

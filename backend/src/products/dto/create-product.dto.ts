@@ -4,9 +4,14 @@ import {
   IsOptional,
   IsArray,
   IsBoolean,
+  IsIn,
   ValidateNested,
   Min,
 } from 'class-validator';
+
+// Real Indian GST slabs only — kept as a fixed allow-list (not free text) so
+// a typo can never create an invalid tax rate on a product.
+export const GST_RATE_SLABS = [0, 5, 12, 18, 28] as const;
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CreateVariantDto, VariantOptionTypeDto } from './product-variant.dto';
@@ -44,6 +49,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   costPrice?: number;
+
+  @ApiProperty({ enum: GST_RATE_SLABS, description: 'Indian GST slab — 0, 5, 12, 18, or 28 percent' })
+  @IsIn(GST_RATE_SLABS)
+  gstRate: number;
 
   @ApiProperty()
   @IsString()

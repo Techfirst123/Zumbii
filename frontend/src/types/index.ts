@@ -141,6 +141,7 @@ export interface CartItem {
   name: string;
   image: string;
   price: number;
+  gstRate: number;
   quantity: number;
   maxQuantity: number;
   seller: string;

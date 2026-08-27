@@ -5,9 +5,10 @@ import { OrdersService } from './orders.service';
 import { AuthModule } from '../auth/auth.module';
 import { ProductsModule } from '../products/products.module';
 import { CouponsModule } from '../coupons/coupons.module';
+import { DeliveryModule } from '../delivery/delivery.module';
 
 @Module({
-  imports: [AuthModule, ProductsModule, CouponsModule],
+  imports: [AuthModule, ProductsModule, CouponsModule, DeliveryModule],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

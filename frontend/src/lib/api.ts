@@ -163,6 +163,10 @@ export interface BackendProduct {
   price: number;
   comparePrice?: number | null;
   costPrice?: number | null;
+  // Indian GST slab (0/5/12/18/28) this product was uploaded with. `price`
+  // above already includes this — it's only ever a back-calculated
+  // break-up at checkout, never added on top in the storefront.
+  gstRate: number;
   sku: string;
   barcode?: string | null;
   quantity: number;
@@ -306,9 +310,13 @@ export const usersApi = {
     api.put<UserProfileResponse>('/users/me', payload),
 };
 
+export type PincodeStatus = 'ACTIVE' | 'INACTIVE' | 'COMING_SOON' | 'UNLISTED';
+
 export interface PincodeCheckResponse {
   code: string;
   serviceable: boolean;
+  status: PincodeStatus;
+  message: string;
   city?: string;
   state?: string;
   codAvailable?: boolean;
@@ -457,6 +465,7 @@ export interface BackendOrderItem {
   price: string;
   quantity: number;
   total: string;
+  gstRate: number;
   image?: string | null;
 }
 
@@ -503,6 +512,7 @@ export interface BackendWishlistItem {
     slug: string;
     price: string;
     comparePrice?: string | null;
+    gstRate: number;
     images: string[];
     rating: number;
     reviewCount: number;

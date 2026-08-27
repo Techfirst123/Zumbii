@@ -73,6 +73,7 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
       name: product.name,
       image: mainImage,
       price: displayPrice,
+      gstRate: product.gstRate,
       quantity: product.moq > 1 ? product.moq : 1,
       maxQuantity: Math.max(effectiveStock, 1),
       seller: product.seller?.businessName || '',
