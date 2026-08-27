@@ -1,5 +1,17 @@
 import { randomInt } from 'crypto';
 
+/** Domain used for the synthetic email placeholder issued to phone-only signups
+ * (the `users.email` column is unique/non-null, but phone-only OTP accounts have no real email). */
+export const PHONE_PLACEHOLDER_EMAIL_DOMAIN = 'phone.zumbii.local';
+
+export function placeholderEmailForPhone(e164Phone: string): string {
+  return `${e164Phone.replace(/[^\d]/g, '')}@${PHONE_PLACEHOLDER_EMAIL_DOMAIN}`;
+}
+
+export function isPlaceholderEmail(email?: string | null): boolean {
+  return !!email && email.endsWith(`@${PHONE_PLACEHOLDER_EMAIL_DOMAIN}`);
+}
+
 /** Normalizes an Indian phone number to E.164 form: +91XXXXXXXXXX, or null if invalid. */
 export function normalizePhone(raw?: string | null): string | null {
   if (!raw) return null;

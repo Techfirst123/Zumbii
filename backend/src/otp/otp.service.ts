@@ -4,15 +4,21 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { generateOtp, normalizeEmail, normalizePhone } from './utils/normalize';
+import {
+  generateOtp,
+  isPlaceholderEmail,
+  normalizeEmail,
+  normalizePhone,
+  placeholderEmailForPhone,
+} from './utils/normalize';
 import { sendOtpSms } from './providers/sms.provider';
 import { sendOtpEmail } from './providers/email.provider';
 
@@ -110,6 +116,7 @@ export class OtpService {
     return {
       message: `OTP sent via ${type === 'phone' ? 'SMS' : 'email'}.`,
       expiresInMinutes: OTP_EXPIRY_MINUTES,
+      resendCooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
       devMode: result.provider.endsWith('-dev'),
     };
   }
@@ -153,20 +160,27 @@ export class OtpService {
 
     // Stored phone numbers aren't normalized elsewhere in the app (raw 10-digit,
     // +91-prefixed, etc.), so match on the national number's last 10 digits.
-    const user = await this.prisma.user.findFirst({
+    let user = await this.prisma.user.findFirst({
       where:
         type === 'phone' ? { phone: { endsWith: value.replace('+91', '') } } : { email: value },
     });
 
+    // OTP login and signup share this endpoint: the first successful OTP for an
+    // unrecognized phone/email creates the account (passwordless — no name yet).
     if (!user) {
-      throw new NotFoundException(
-        `No account found for this ${type === 'phone' ? 'phone number' : 'email'}. Please sign up first.`,
-      );
+      const unusablePassword = await bcrypt.hash(randomBytes(24).toString('hex'), 10);
+      user = await this.prisma.user.create({
+        data: {
+          email: type === 'email' ? value : placeholderEmailForPhone(value),
+          phone: type === 'phone' ? value : null,
+          passwordHash: unusablePassword,
+        },
+      });
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
 
-    await this.prisma.user.update({
+    user = await this.prisma.user.update({
       where: { id: user.id },
       data: {
         refreshToken: tokens.refreshToken,
@@ -178,12 +192,16 @@ export class OtpService {
     return {
       user: {
         id: user.id,
-        email: user.email,
+        email: isPlaceholderEmail(user.email) ? null : user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
         role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+        verifiedVia: type,
       },
+      profileComplete: Boolean(user.firstName),
       ...tokens,
     };
   }

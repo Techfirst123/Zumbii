@@ -52,10 +52,12 @@ import { PincodeChecker } from '@/components/ui/PincodeChecker';
 import { Modal } from '@/components/ui/Modal';
 import { VariantSelector } from '@/components/product/VariantSelector';
 import { ProductImagePlaceholder, PLACEHOLDER_IMAGE_SENTINEL } from '@/components/product/ProductImagePlaceholder';
+import toast from 'react-hot-toast';
 import type { Product, ProductVariant, Review, Seller } from '@/types';
-import { productsApi, ApiError } from '@/lib/api';
+import { productsApi, wishlistApi, ApiError } from '@/lib/api';
 import { mapBackendProduct, mapBackendReviews } from '@/lib/adapters';
 import { useCartStore } from '@/store/cartStore';
+import { useAuthStore } from '@/store/authStore';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { trackEvent } from '@/lib/gtag';
 
@@ -515,6 +517,7 @@ export default function ProductPage() {
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
   const requireAuth = useRequireAuth();
+  const authUser = useAuthStore((s) => s.user);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -527,6 +530,7 @@ export default function ProductPage() {
   const [showFullDesc, setShowFullDesc] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -568,6 +572,41 @@ export default function ProductPage() {
       cancelled = true;
     };
   }, [params?.slug]);
+
+  useEffect(() => {
+    if (!product || !authUser) {
+      setWishlisted(false);
+      return;
+    }
+    let cancelled = false;
+    wishlistApi
+      .list()
+      .then((items) => {
+        if (!cancelled) setWishlisted(items.some((i) => i.productId === product.id));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product?.id, authUser]);
+
+  async function handleToggleWishlist() {
+    if (!product) return;
+    if (!requireAuth()) return;
+    const next = !wishlisted;
+    setWishlisted(next);
+    setWishlistBusy(true);
+    try {
+      if (next) await wishlistApi.add(product.id);
+      else await wishlistApi.remove(product.id);
+    } catch (err) {
+      setWishlisted(!next);
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update wishlist');
+    } finally {
+      setWishlistBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!product?.activeCampaign) return;
@@ -843,7 +882,8 @@ export default function ProductPage() {
                     Buy Now
                   </Button>
                   <button
-                    onClick={() => setWishlisted(!wishlisted)}
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistBusy}
                     className={clsx(
                       'w-12 h-12 flex items-center justify-center rounded-xl border-2 transition-all shrink-0',
                       wishlisted

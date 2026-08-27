@@ -13,9 +13,11 @@ export function resolveImageUrl(url?: string | null): string {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  data: unknown;
+  constructor(message: string, status: number, data?: unknown) {
     super(message);
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -81,7 +83,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       useAuthStore.getState().logout();
     }
     const message = data?.message || res.statusText || 'Request failed';
-    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, res.status);
+    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, res.status, data);
   }
 
   return data as T;
@@ -228,17 +230,24 @@ function toQueryString(query: object = {}): string {
 
 export interface AuthUser {
   id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
+  email: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   phone?: string | null;
   role: string;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  /** Which channel this session's OTP was verified against — 'phone' or 'email'. Only set by OTP login. */
+  verifiedVia?: 'phone' | 'email';
+  createdAt?: string;
 }
 
 export interface AuthResponse {
   user: AuthUser;
   accessToken: string;
   refreshToken: string;
+  /** Present on the OTP verify response: false means this is a first-time signup that still needs a name. */
+  profileComplete?: boolean;
 }
 
 export interface RegisterPayload {
@@ -259,7 +268,15 @@ export const authApi = {
 export interface SendOtpResponse {
   message: string;
   expiresInMinutes: number;
+  resendCooldownSeconds: number;
   devMode: boolean;
+}
+
+/** The OTP send endpoint returns `retryAfterSeconds` on its 429 cooldown response. */
+export function otpRetryAfterSeconds(err: unknown): number | undefined {
+  if (!(err instanceof ApiError)) return undefined;
+  const seconds = (err.data as { retryAfterSeconds?: unknown } | null)?.retryAfterSeconds;
+  return typeof seconds === 'number' ? seconds : undefined;
 }
 
 export const otpApi = {
@@ -267,6 +284,26 @@ export const otpApi = {
     api.post<SendOtpResponse>('/auth/otp/send', identifier, { auth: false }),
   verify: (identifier: { phone?: string; email?: string }, otp: string) =>
     api.post<AuthResponse>('/auth/otp/verify', { ...identifier, otp }, { auth: false }),
+};
+
+export interface UserProfileResponse {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  role: string;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  createdAt: string;
+  profileComplete: boolean;
+}
+
+export const usersApi = {
+  me: () => api.get<UserProfileResponse>('/users/me'),
+  updateMe: (payload: { firstName?: string; lastName?: string }) =>
+    api.put<UserProfileResponse>('/users/me', payload),
 };
 
 export interface PincodeCheckResponse {
@@ -398,6 +435,18 @@ export interface CreateOrderPayload {
   giftMessage?: string;
 }
 
+export type BackendOrderStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PROCESSING'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REFUNDED';
+
+export type BackendPaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+
+// Prisma serializes Decimal fields as numeric strings (e.g. "204.12"), not JSON numbers.
 export interface BackendOrderItem {
   id: string;
   productId: string;
@@ -405,25 +454,31 @@ export interface BackendOrderItem {
   variantLabel?: string | null;
   name: string;
   sku: string;
-  price: number;
+  price: string;
   quantity: number;
-  total: number;
+  total: string;
   image?: string | null;
 }
 
 export interface BackendOrder {
   id: string;
   orderNumber: string;
-  status: string;
-  paymentStatus: string;
-  subtotal: number;
+  status: BackendOrderStatus;
+  paymentStatus: BackendPaymentStatus;
+  subtotal: string;
   shippingMethod: string;
-  shippingCost: number;
-  taxAmount: number;
-  discountAmount: number;
-  total: number;
+  shippingCost: string;
+  taxAmount: string;
+  discountAmount: string;
+  total: string;
   currency: string;
+  notes?: string | null;
+  cancelReason?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
+  address: BackendAddress;
   items: BackendOrderItem[];
 }
 
@@ -434,4 +489,44 @@ export const ordersApi = {
       `/orders/my${toQueryString(query)}`
     ),
   get: (id: string) => api.get<BackendOrder>(`/orders/${id}`),
+};
+
+// ---- Wishlist ----
+
+export interface BackendWishlistItem {
+  id: string;
+  productId: string;
+  addedAt: string;
+  product: {
+    id: string;
+    name: string;
+    slug: string;
+    price: string;
+    comparePrice?: string | null;
+    images: string[];
+    rating: number;
+    reviewCount: number;
+    inStock: boolean;
+    seller: string | null;
+  };
+}
+
+export const wishlistApi = {
+  list: () => api.get<BackendWishlistItem[]>('/wishlist'),
+  add: (productId: string) => api.post<{ message: string }>('/wishlist', { productId }),
+  remove: (productId: string) => api.delete<{ message: string }>(`/wishlist/${productId}`),
+};
+
+// ---- Coupons ----
+
+export interface CouponValidationResult {
+  code: string;
+  description: string | null;
+  discountType: string;
+  discountAmount: number;
+}
+
+export const couponsApi = {
+  validate: (code: string, subtotal: number) =>
+    api.post<CouponValidationResult>('/coupons/validate', { code, subtotal }, { auth: false }),
 };

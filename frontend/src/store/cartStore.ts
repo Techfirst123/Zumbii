@@ -4,9 +4,11 @@ import type { CartItem } from '@/types';
 
 interface CartState {
   items: CartItem[];
+  couponCode: string | null;
   addItem: (item: CartItem) => void;
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
+  setCoupon: (code: string | null) => void;
   clear: () => void;
   totalItems: () => number;
   subtotal: () => number;
@@ -20,6 +22,8 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      couponCode: null,
+      setCoupon: (code) => set({ couponCode: code }),
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => isSameLine(i, item.productId, item.variantId));
@@ -47,7 +51,7 @@ export const useCartStore = create<CartState>()(
               : i
           ),
         })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], couponCode: null }),
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       subtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),

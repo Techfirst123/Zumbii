@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +9,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  CreditCard,
   Settings,
   Package,
   Heart,
@@ -39,10 +37,6 @@ import {
   Briefcase,
   Pencil,
   Building2,
-  Smartphone,
-  Wallet,
-  Landmark,
-  Banknote,
   Download,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -53,88 +47,26 @@ import { Badge } from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/authStore';
+import { useAuthGuard } from '@/hooks/useRequireAuth';
+import { addressApi, ordersApi, usersApi, wishlistApi, ApiError, type BackendAddress } from '@/lib/api';
 
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  avatar: string;
-  memberSince: string;
-  ordersCount: number;
-  wishlistCount: number;
-  addressesCount: number;
-}
-
-interface SavedAddress {
-  id: string;
-  name: string;
-  phone: string;
-  line1: string;
-  line2?: string;
-  city: string;
-  state: string;
-  pincode: string;
-  isDefault: boolean;
-  type: 'home' | 'work' | 'other';
-}
-
-interface SavedPayment {
-  id: string;
-  type: 'card' | 'upi' | 'wallet';
-  name: string;
-  details: string;
-  isDefault: boolean;
-  icon: React.ElementType;
-}
-
-const profile: UserProfile = {
-  name: 'Rahul Sharma',
-  email: 'rahul.sharma@email.com',
-  phone: '+91 98765 43210',
-  avatar: '',
-  memberSince: 'January 2025',
-  ordersCount: 12,
-  wishlistCount: 8,
-  addressesCount: 2,
-};
-
-const savedAddresses: SavedAddress[] = [
-  {
-    id: 'a1', name: 'Rahul Sharma', phone: '+91 98765 43210',
-    line1: '42, Gandhi Nagar, Andheri East', line2: 'Near Railway Station',
-    city: 'Mumbai', state: 'Maharashtra', pincode: '400069',
-    isDefault: true, type: 'home',
-  },
-  {
-    id: 'a2', name: 'Rahul Sharma', phone: '+91 98765 43210',
-    line1: 'Suite 301, Tech Park, MG Road',
-    city: 'Bangalore', state: 'Karnataka', pincode: '560001',
-    isDefault: false, type: 'work',
-  },
-];
-
-const paymentMethods: SavedPayment[] = [
-  { id: 'p1', type: 'card', name: 'HDFC Bank Credit Card', details: '**** 4532', isDefault: true, icon: CreditCard },
-  { id: 'p2', type: 'upi', name: 'Google Pay', details: 'rahul@okhdfcbank', isDefault: false, icon: Smartphone },
-  { id: 'p3', type: 'wallet', name: 'Zumbii Pay', details: 'Balance: ₹2,450', isDefault: false, icon: Wallet },
-];
-
-const recentActivities = [
-  { id: 'act1', action: 'Order Delivered', details: 'Premium Wireless Headphones', time: '2 days ago', icon: Package, color: 'text-emerald-600 bg-emerald-100' },
-  { id: 'act2', action: 'Wishlist Updated', details: 'Added 3 new items', time: '5 days ago', icon: Heart, color: 'text-rose-600 bg-rose-100' },
-  { id: 'act3', action: 'Order Shipped', details: 'Smart Watch Ultra X2', time: '1 week ago', icon: Package, color: 'text-violet-600 bg-violet-100' },
-  { id: 'act4', action: 'Payment Added', details: 'New card added successfully', time: '2 weeks ago', icon: CreditCard, color: 'text-blue-600 bg-blue-100' },
-  { id: 'act5', action: 'Address Updated', details: 'Added new work address', time: '3 weeks ago', icon: MapPin, color: 'text-amber-600 bg-amber-100' },
-];
-
-type Tab = 'profile' | 'addresses' | 'payments' | 'settings';
+type Tab = 'profile' | 'addresses' | 'settings';
 
 function AccountPage() {
   const router = useRouter();
+  const authUser = useAuthStore((s) => s.user);
+  const updateUser = useAuthStore((s) => s.updateUser);
   const logout = useAuthStore((s) => s.logout);
+  const { ready: authReady, authenticated } = useAuthGuard();
+
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: profile.name, email: profile.email, phone: profile.phone });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({ firstName: '', lastName: '' });
+  const [addresses, setAddresses] = useState<BackendAddress[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [notifications, setNotifications] = useState({
     email: true,
     sms: true,
@@ -145,10 +77,89 @@ function AccountPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const handleSaveProfile = () => {
-    toast.success('Profile updated successfully');
-    setEditing(false);
-  };
+  // Refresh from the API on mount so the page shows the current server-side
+  // profile (verified flags, name) rather than only what was cached at login.
+  useEffect(() => {
+    if (!authenticated) return;
+    let cancelled = false;
+    usersApi
+      .me()
+      .then((fresh) => {
+        if (cancelled) return;
+        updateUser({
+          firstName: fresh.firstName,
+          lastName: fresh.lastName,
+          email: fresh.email,
+          phone: fresh.phone,
+          isEmailVerified: fresh.isEmailVerified,
+          isPhoneVerified: fresh.isPhoneVerified,
+          createdAt: fresh.createdAt,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated, updateUser]);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    let cancelled = false;
+    setAddressesLoading(true);
+    Promise.all([addressApi.list(), ordersApi.myOrders({ limit: 1 }), wishlistApi.list()])
+      .then(([addressList, orders, wishlist]) => {
+        if (cancelled) return;
+        setAddresses(addressList);
+        setOrdersCount(orders.total);
+        setWishlistCount(wishlist.length);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setAddressesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated]);
+
+  const displayName = [authUser?.firstName, authUser?.lastName].filter(Boolean).join(' ').trim();
+  const initials =
+    displayName
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || (authUser?.phone || authUser?.email || '?')[0]?.toUpperCase();
+  const memberSince = authUser?.createdAt
+    ? new Date(authUser.createdAt).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+    : '';
+
+  function startEditing() {
+    setEditForm({ firstName: authUser?.firstName || '', lastName: authUser?.lastName || '' });
+    setEditing(true);
+  }
+
+  async function handleSaveProfile() {
+    if (!editForm.firstName.trim()) {
+      toast.error('Please enter your name');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      const updated = await usersApi.updateMe({
+        firstName: editForm.firstName.trim(),
+        lastName: editForm.lastName.trim() || undefined,
+      });
+      updateUser({ firstName: updated.firstName, lastName: updated.lastName });
+      toast.success('Profile updated successfully');
+      setEditing(false);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  }
 
   const handleDeleteAccount = () => {
     toast.error('Account deletion is not available yet');
@@ -156,8 +167,7 @@ function AccountPage() {
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'addresses', label: 'Addresses', icon: MapPin, count: profile.addressesCount },
-    { id: 'payments', label: 'Payment Methods', icon: CreditCard },
+    { id: 'addresses', label: 'Addresses', icon: MapPin, count: addresses.length },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -172,11 +182,7 @@ function AccountPage() {
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl gradient-bg flex items-center justify-center text-white text-2xl font-bold shrink-0">
-              {profile.avatar ? (
-                <Image src={profile.avatar} alt={profile.name} fill className="object-cover rounded-2xl" />
-              ) : (
-                profile.name.split(' ').map((n) => n[0]).join('')
-              )}
+              {authUser?.firstName ? initials : <User className="w-7 h-7" />}
               <button
                 onClick={() => toast.success('Avatar upload coming soon')}
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-border flex items-center justify-center hover:bg-surface-tertiary transition-colors shadow-sm"
@@ -186,15 +192,14 @@ function AccountPage() {
               </button>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">{profile.name}</h2>
-              <p className="text-sm text-text-tertiary">Member since {profile.memberSince}</p>
-              <Badge variant="success" size="sm" className="mt-1">Verified Account</Badge>
+              <h2 className="text-xl font-bold text-text-primary">{displayName || 'Your account'}</h2>
+              {memberSince && <p className="text-sm text-text-tertiary">Member since {memberSince}</p>}
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setEditing(!editing)}
+            onClick={() => (editing ? setEditing(false) : startEditing())}
           >
             <Edit2 className="w-4 h-4" />
             {editing ? 'Cancel' : 'Edit'}
@@ -203,46 +208,62 @@ function AccountPage() {
 
         {editing ? (
           <div className="space-y-4">
-            <Input
-              label="Full Name"
-              value={editForm.name}
-              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              icon={<User className="w-4 h-4" />}
-            />
-            <Input
-              label="Email Address"
-              type="email"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-              icon={<Mail className="w-4 h-4" />}
-            />
-            <Input
-              label="Phone Number"
-              value={editForm.phone}
-              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-              icon={<Phone className="w-4 h-4" />}
-            />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Input
+                label="First name"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                icon={<User className="w-4 h-4" />}
+              />
+              <Input
+                label="Last name"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                icon={<User className="w-4 h-4" />}
+              />
+            </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button onClick={handleSaveProfile}>Save Changes</Button>
+              <Button onClick={handleSaveProfile} loading={savingProfile} disabled={savingProfile}>
+                Save Changes
+              </Button>
             </div>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-surface-secondary">
-              <div className="flex items-center gap-2 text-xs text-text-tertiary mb-1">
-                <Mail className="w-3.5 h-3.5" />
-                Email Address
+            {authUser?.email && (
+              <div className="p-4 rounded-2xl bg-surface-secondary">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                    <Mail className="w-3.5 h-3.5" />
+                    Email Address
+                  </div>
+                  {authUser.isEmailVerified && (
+                    <Badge variant="success" size="sm">Verified</Badge>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-text-primary">{authUser.email}</p>
               </div>
-              <p className="text-sm font-medium text-text-primary">{profile.email}</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-surface-secondary">
-              <div className="flex items-center gap-2 text-xs text-text-tertiary mb-1">
-                <Phone className="w-3.5 h-3.5" />
-                Phone Number
+            )}
+            {authUser?.phone && (
+              <div className="p-4 rounded-2xl bg-surface-secondary">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                    <Phone className="w-3.5 h-3.5" />
+                    Phone Number
+                  </div>
+                  {authUser.isPhoneVerified && (
+                    <Badge variant="success" size="sm">Verified</Badge>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-text-primary">{authUser.phone}</p>
               </div>
-              <p className="text-sm font-medium text-text-primary">{profile.phone}</p>
-            </div>
+            )}
+            {!authUser?.email && !authUser?.phone && (
+              <p className="text-sm text-text-tertiary sm:col-span-2">
+                No verified phone or email on file yet.
+              </p>
+            )}
           </div>
         )}
       </Card>
@@ -251,46 +272,25 @@ function AccountPage() {
         <Link href="/orders">
           <Card className="p-4 text-center" hover>
             <Package className="w-5 h-5 mx-auto text-zumbii-600" />
-            <p className="text-xl font-bold text-text-primary mt-2">{profile.ordersCount}</p>
+            <p className="text-xl font-bold text-text-primary mt-2">{ordersCount}</p>
             <p className="text-xs text-text-tertiary">Orders</p>
           </Card>
         </Link>
         <Link href="/wishlist">
           <Card className="p-4 text-center" hover>
             <Heart className="w-5 h-5 mx-auto text-rose-500" />
-            <p className="text-xl font-bold text-text-primary mt-2">{profile.wishlistCount}</p>
+            <p className="text-xl font-bold text-text-primary mt-2">{wishlistCount}</p>
             <p className="text-xs text-text-tertiary">Wishlist</p>
           </Card>
         </Link>
         <Link href="/account/addresses">
           <Card className="p-4 text-center" hover>
             <MapPin className="w-5 h-5 mx-auto text-amber-500" />
-            <p className="text-xl font-bold text-text-primary mt-2">{profile.addressesCount}</p>
+            <p className="text-xl font-bold text-text-primary mt-2">{addresses.length}</p>
             <p className="text-xs text-text-tertiary">Addresses</p>
           </Card>
         </Link>
       </div>
-
-      <Card className="p-5 sm:p-6 mt-6" hover={false}>
-        <h3 className="text-base font-bold text-text-primary mb-4">Recent Activity</h3>
-        <div className="space-y-4">
-          {recentActivities.map((activity, idx) => {
-            const Icon = activity.icon;
-            return (
-              <div key={activity.id} className="flex items-start gap-3">
-                <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', activity.color)}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-primary">{activity.action}</p>
-                  <p className="text-xs text-text-tertiary">{activity.details}</p>
-                </div>
-                <span className="text-[11px] text-text-tertiary shrink-0">{activity.time}</span>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
 
       <div className="mt-6 p-5 rounded-2xl bg-gradient-to-r from-zumbii-50 to-surface border border-zumbii-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -329,92 +329,60 @@ function AccountPage() {
           </Button>
         </Link>
       </div>
-      <div className="space-y-3">
-        {savedAddresses.map((addr) => (
-          <Card key={addr.id} hover={false}>
-            <div className="p-4 sm:p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className={clsx(
-                    'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
-                    addr.type === 'home' ? 'bg-violet-100' : 'bg-amber-100'
-                  )}>
-                    {addr.type === 'home' ? <Home className="w-4 h-4 text-violet-600" /> : <Briefcase className="w-4 h-4 text-amber-600" />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-text-primary text-sm">{addr.name}</span>
-                      {addr.isDefault && <Badge variant="default" size="sm">Default</Badge>}
+      {addressesLoading ? (
+        <p className="text-sm text-text-tertiary">Loading addresses…</p>
+      ) : addresses.length === 0 ? (
+        <Card className="p-6 text-center" hover={false}>
+          <MapPin className="w-8 h-8 mx-auto text-text-tertiary mb-2" />
+          <p className="text-sm text-text-tertiary">No saved addresses yet.</p>
+          <Link href="/account/addresses" className="inline-block mt-3">
+            <Button variant="outline" size="sm">
+              <Plus className="w-4 h-4" />
+              Add an address
+            </Button>
+          </Link>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {addresses.map((addr) => {
+            const label = addr.label.toLowerCase();
+            const Icon = label === 'home' ? Home : label === 'work' ? Briefcase : MapPin;
+            return (
+              <Card key={addr.id} hover={false}>
+                <div className="p-4 sm:p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className={clsx(
+                        'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+                        label === 'home' ? 'bg-violet-100' : label === 'work' ? 'bg-amber-100' : 'bg-sky-100'
+                      )}>
+                        <Icon className={clsx('w-4 h-4', label === 'home' ? 'text-violet-600' : label === 'work' ? 'text-amber-600' : 'text-sky-600')} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-text-primary text-sm">{addr.label}</span>
+                          {addr.isDefault && <Badge variant="default" size="sm">Default</Badge>}
+                        </div>
+                        <p className="text-sm text-text-secondary mt-1">{addr.street}</p>
+                        <p className="text-sm text-text-secondary">{addr.city}, {addr.state} - {addr.zipCode}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-text-secondary mt-1">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
-                    <p className="text-sm text-text-secondary">{addr.city}, {addr.state} - {addr.pincode}</p>
-                    <p className="text-sm text-text-secondary mt-0.5">Phone: {addr.phone}</p>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Link
+                        href="/account/addresses"
+                        className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
+                        aria-label="Edit address"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => toast.success('Edit address coming soon')}
-                    className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
-                    aria-label="Edit address"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </motion.div>
-  );
-
-  const renderPayments = () => (
-    <motion.div
-      key="payments"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-xl font-bold text-text-primary">Payment Methods</h2>
-          <p className="text-sm text-text-tertiary mt-1">Manage your saved payment options</p>
+              </Card>
+            );
+          })}
         </div>
-        <Button variant="outline" size="sm">
-          <Plus className="w-4 h-4" />
-          Add New
-        </Button>
-      </div>
-      <div className="space-y-3">
-        {paymentMethods.map((method) => {
-          const Icon = method.icon;
-          return (
-            <Card key={method.id} hover={false}>
-              <div className="p-4 sm:p-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-surface-tertiary flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6 text-text-secondary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-text-primary text-sm">{method.name}</span>
-                      {method.isDefault && <Badge variant="default" size="sm">Default</Badge>}
-                    </div>
-                    <p className="text-xs text-text-tertiary mt-0.5">{method.details}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => toast.success('Edit payment coming soon')}
-                  className="p-2 rounded-lg hover:bg-surface-tertiary transition-colors text-text-tertiary hover:text-zumbii-600"
-                  aria-label="Edit payment"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
+      )}
     </motion.div>
   );
 
@@ -554,10 +522,13 @@ function AccountPage() {
     switch (activeTab) {
       case 'profile': return renderProfile();
       case 'addresses': return renderAddresses();
-      case 'payments': return renderPayments();
       case 'settings': return renderSettings();
     }
   };
+
+  if (!authReady || !authenticated) {
+    return <div className="min-h-screen bg-surface" />;
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -647,7 +618,7 @@ function AccountPage() {
               <button
                 onClick={() => {
                   logout();
-                  router.push('/login');
+                  router.push('/');
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all"
               >

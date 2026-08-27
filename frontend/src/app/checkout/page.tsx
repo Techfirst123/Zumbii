@@ -45,7 +45,8 @@ import Card from '@/components/ui/Card';
 import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/store/cartStore';
 import { useAuthStore } from '@/store/authStore';
-import { addressApi, ordersApi, ApiError, type BackendAddress, type AddressPayload } from '@/lib/api';
+import { useAuthGuard } from '@/hooks/useRequireAuth';
+import { addressApi, ordersApi, couponsApi, ApiError, type BackendAddress, type AddressPayload } from '@/lib/api';
 
 type Step = 'address' | 'shipping' | 'payment' | 'review';
 
@@ -107,7 +108,10 @@ function CheckoutPage() {
   const cartItems = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clear);
+  const savedCouponCode = useCartStore((s) => s.couponCode);
+  const setSavedCoupon = useCartStore((s) => s.setCoupon);
   const authUser = useAuthStore((s) => s.user);
+  const { ready: authReady, authenticated } = useAuthGuard();
   const [currentStep, setCurrentStep] = useState<Step>('address');
   const [addresses, setAddresses] = useState<BackendAddress[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
@@ -123,6 +127,8 @@ function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState('');
   const [placeOrderError, setPlaceOrderError] = useState('');
   const [showFullSummary, setShowFullSummary] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string | null>(null);
 
   const [newAddress, setNewAddress] = useState<AddressPayload>(emptyAddressForm);
 
@@ -130,8 +136,8 @@ function CheckoutPage() {
 
   const stepIndex = steps.findIndex((s) => s.id === currentStep);
   const shippingCost = shippingMethods.find((s) => s.id === selectedShipping)?.price ?? 0;
-  const tax = Math.round(subtotal * 0.12);
-  const total = subtotal + shippingCost + tax;
+  const tax = Math.round((subtotal - couponDiscount) * 0.12);
+  const total = subtotal - couponDiscount + shippingCost + tax;
 
   useEffect(() => {
     if (cartItems.length === 0 && !orderPlaced) {
@@ -140,7 +146,38 @@ function CheckoutPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cartItems.length, orderPlaced]);
 
+  // A coupon applied on the cart page carries over here via the persisted
+  // cart store — re-validate it against this page's subtotal since it may
+  // have changed (or the coupon may have expired/hit its usage limit) since.
   useEffect(() => {
+    if (!savedCouponCode || subtotal <= 0) {
+      setCouponDiscount(0);
+      setAppliedCouponCode(null);
+      return;
+    }
+    let cancelled = false;
+    couponsApi
+      .validate(savedCouponCode, subtotal)
+      .then((res) => {
+        if (cancelled) return;
+        setCouponDiscount(res.discountAmount);
+        setAppliedCouponCode(res.code);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCouponDiscount(0);
+        setAppliedCouponCode(null);
+        setSavedCoupon(null);
+        toast.error('Your coupon is no longer valid and was removed');
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedCouponCode, subtotal]);
+
+  useEffect(() => {
+    if (!authenticated) return;
     let cancelled = false;
     async function loadAddresses() {
       setAddressesLoading(true);
@@ -161,7 +198,7 @@ function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authenticated]);
 
   const canProceed = () => {
     if (currentStep === 'address') return !!selectedAddress;
@@ -255,6 +292,7 @@ function CheckoutPage() {
           variantId: item.variantId,
           quantity: item.quantity,
         })),
+        ...(appliedCouponCode ? { couponCode: appliedCouponCode } : {}),
       });
       setOrderPlaced(true);
       setOrderNumber(order.orderNumber);
@@ -810,6 +848,12 @@ function CheckoutPage() {
                 <span className="text-text-secondary">Tax (GST 12%)</span>
                 <span className="text-text-primary">₹{tax.toLocaleString('en-IN')}</span>
               </div>
+              {couponDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-leaf-600">Discount {appliedCouponCode ? `(${appliedCouponCode})` : ''}</span>
+                  <span className="text-leaf-600">-₹{couponDiscount.toLocaleString('en-IN')}</span>
+                </div>
+              )}
               <hr className="border-border" />
               <div className="flex justify-between text-base">
                 <span className="font-bold text-text-primary">Total</span>
@@ -896,6 +940,10 @@ function CheckoutPage() {
       </motion.div>
     </motion.div>
   );
+
+  if (!authReady || !authenticated) {
+    return <div className="min-h-screen bg-surface" />;
+  }
 
   if (orderPlaced) {
     return (
@@ -1019,6 +1067,12 @@ function CheckoutPage() {
                     <span className="text-text-secondary">Tax</span>
                     <span className="text-text-primary font-medium">₹{tax.toLocaleString('en-IN')}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-leaf-600">Discount {appliedCouponCode ? `(${appliedCouponCode})` : ''}</span>
+                      <span className="text-leaf-600 font-medium">-₹{couponDiscount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
                   <hr className="border-border" />
                   <div className="flex justify-between">
                     <span className="font-bold text-text-primary">Total</span>

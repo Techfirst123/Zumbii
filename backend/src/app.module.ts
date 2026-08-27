@@ -19,6 +19,8 @@ import { BlogModule } from './blog/blog.module';
 import { UploadModule } from './upload/upload.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { OtpModule } from './otp/otp.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { CouponsModule } from './coupons/coupons.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { OtpModule } from './otp/otp.module';
     UploadModule,
     DeliveryModule,
     OtpModule,
+    WishlistModule,
+    CouponsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -1,149 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Heart,
-  ShoppingCart,
-  Trash2,
-  Share2,
-  Package,
-  ArrowLeft,
-  X,
-  Star,
-  Check,
-  Copy,
-  ExternalLink,
-} from 'lucide-react';
+import { Heart, ShoppingCart, Trash2, Package, ArrowLeft, X, Star, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import Button from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import Card from '@/components/ui/Card';
-
-interface WishlistItem {
-  id: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  reviewCount: number;
-  seller: string;
-  inStock: boolean;
-  slug: string;
-  addedAt: string;
-}
-
-const initialWishlist: WishlistItem[] = [
-  {
-    id: 'w1',
-    name: 'Premium Wireless Headphones Pro',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
-    price: 2499,
-    originalPrice: 3999,
-    rating: 4.8,
-    reviewCount: 234,
-    seller: 'TechGadgets India',
-    inStock: true,
-    slug: 'premium-wireless-headphones',
-    addedAt: '2026-06-25',
-  },
-  {
-    id: 'w2',
-    name: 'Smart Watch Ultra X2',
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
-    price: 5999,
-    originalPrice: 8999,
-    rating: 4.6,
-    reviewCount: 189,
-    seller: 'WearableTech',
-    inStock: true,
-    slug: 'smart-watch-ultra',
-    addedAt: '2026-06-24',
-  },
-  {
-    id: 'w3',
-    name: 'Handcrafted Ceramic Dinner Set',
-    image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=400&q=80',
-    price: 3499,
-    originalPrice: 4999,
-    rating: 4.9,
-    reviewCount: 178,
-    seller: 'ArtisanCraft',
-    inStock: true,
-    slug: 'ceramic-dinner-set',
-    addedAt: '2026-06-23',
-  },
-  {
-    id: 'w4',
-    name: '4K Action Camera HDR',
-    image: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&q=80',
-    price: 12999,
-    originalPrice: 17999,
-    rating: 4.7,
-    reviewCount: 145,
-    seller: 'GadgetPro',
-    inStock: false,
-    slug: '4k-action-camera',
-    addedAt: '2026-06-22',
-  },
-  {
-    id: 'w5',
-    name: 'Ergonomic Office Chair',
-    image: 'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=400&q=80',
-    price: 8999,
-    originalPrice: 12999,
-    rating: 4.3,
-    reviewCount: 89,
-    seller: 'FurnitureHub',
-    inStock: true,
-    slug: 'ergonomic-office-chair',
-    addedAt: '2026-06-21',
-  },
-  {
-    id: 'w6',
-    name: 'Noise Cancelling Earbuds',
-    image: 'https://images.unsplash.com/photo-1590658268037-6bf12f032f11?w=400&q=80',
-    price: 4999,
-    originalPrice: 7999,
-    rating: 4.8,
-    reviewCount: 456,
-    seller: 'AudioPro',
-    inStock: true,
-    slug: 'noise-cancelling-earbuds',
-    addedAt: '2026-06-20',
-  },
-  {
-    id: 'w7',
-    name: 'Leather Laptop Bag Premium',
-    image: 'https://images.unsplash.com/photo-1547949003-9792a18a2601?w=400&q=80',
-    price: 3999,
-    originalPrice: 5999,
-    rating: 4.5,
-    reviewCount: 345,
-    seller: 'LeatherCraft',
-    inStock: true,
-    slug: 'leather-laptop-bag',
-    addedAt: '2026-06-19',
-  },
-  {
-    id: 'w8',
-    name: 'Running Shoes Ultra Comfort',
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80',
-    price: 4999,
-    originalPrice: 7999,
-    rating: 4.7,
-    reviewCount: 678,
-    seller: 'Sportify',
-    inStock: true,
-    slug: 'running-shoes-ultra',
-    addedAt: '2026-06-18',
-  },
-];
+import { useAuthGuard } from '@/hooks/useRequireAuth';
+import { useCartStore } from '@/store/cartStore';
+import { wishlistApi, resolveImageUrl, ApiError, type BackendWishlistItem } from '@/lib/api';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -156,32 +25,95 @@ const fadeIn = {
 };
 
 function WishlistPage() {
-  const [wishlist, setWishlist] = useState<WishlistItem[]>(initialWishlist);
-  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
+  const { ready: authReady, authenticated } = useAuthGuard();
+  const addItem = useCartStore((s) => s.addItem);
 
-  const handleRemove = (id: string, name: string) => {
-    setRemovingIds((prev) => new Set(prev).add(id));
-    setTimeout(() => {
-      setWishlist((prev) => prev.filter((item) => item.id !== id));
-      setRemovingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
-      toast.success(`${name} removed from wishlist`);
-    }, 300);
-  };
+  const [items, setItems] = useState<BackendWishlistItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [clearing, setClearing] = useState(false);
 
-  const handleMoveToCart = (item: WishlistItem) => {
-    setWishlist((prev) => prev.filter((i) => i.id !== item.id));
-    toast.success(`${item.name} moved to cart`);
-  };
+  useEffect(() => {
+    if (!authenticated) return;
+    let cancelled = false;
+    setLoading(true);
+    wishlistApi
+      .list()
+      .then((res) => {
+        if (!cancelled) setItems(res);
+      })
+      .catch((err) => {
+        if (!cancelled) toast.error(err instanceof ApiError ? err.message : 'Failed to load wishlist');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated]);
 
-  const handleShareWishlist = async () => {
-    const url = `${window.location.origin}/wishlist/shared`;
+  function withBusy(productId: string, busy: boolean) {
+    setBusyIds((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(productId);
+      else next.delete(productId);
+      return next;
+    });
+  }
+
+  async function handleRemove(item: BackendWishlistItem) {
+    withBusy(item.productId, true);
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Wishlist link copied!');
-    } catch {
-      toast.error('Could not copy link');
+      await wishlistApi.remove(item.productId);
+      setItems((prev) => prev.filter((i) => i.productId !== item.productId));
+      toast.success(`${item.product.name} removed from wishlist`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to remove item');
+    } finally {
+      withBusy(item.productId, false);
     }
-  };
+  }
+
+  async function handleMoveToCart(item: BackendWishlistItem) {
+    withBusy(item.productId, true);
+    try {
+      await wishlistApi.remove(item.productId);
+      addItem({
+        productId: item.productId,
+        slug: item.product.slug,
+        name: item.product.name,
+        image: resolveImageUrl(item.product.images[0]),
+        price: Number(item.product.price),
+        quantity: 1,
+        maxQuantity: 99,
+        seller: item.product.seller || '',
+      });
+      setItems((prev) => prev.filter((i) => i.productId !== item.productId));
+      toast.success(`${item.product.name} moved to cart`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to move item to cart');
+    } finally {
+      withBusy(item.productId, false);
+    }
+  }
+
+  async function handleClearAll() {
+    setClearing(true);
+    const results = await Promise.allSettled(items.map((item) => wishlistApi.remove(item.productId)));
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    setItems((prev) => prev.filter((_, idx) => results[idx]?.status !== 'fulfilled'));
+    setClearing(false);
+    if (failed > 0) {
+      toast.error(`Removed some items, but ${failed} failed`);
+    } else {
+      toast.success('Wishlist cleared');
+    }
+  }
+
+  if (!authReady || !authenticated) {
+    return <div className="min-h-screen bg-surface" />;
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -206,28 +138,21 @@ function WishlistPage() {
                 <Heart className="w-6 h-6 text-zumbii-600" />
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">My Wishlist</h1>
-                  <p className="text-sm text-text-tertiary mt-0.5">{wishlist.length} items saved</p>
+                  <p className="text-sm text-text-tertiary mt-0.5">{items.length} items saved</p>
                 </div>
               </div>
-              {wishlist.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleShareWishlist}>
-                    <Share2 className="w-4 h-4" />
-                    Share Wishlist
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setWishlist([]);
-                      toast.success('Wishlist cleared');
-                    }}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Clear All
-                  </Button>
-                </div>
+              {items.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAll}
+                  loading={clearing}
+                  disabled={clearing}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear All
+                </Button>
               )}
             </div>
           </motion.div>
@@ -235,7 +160,11 @@ function WishlistPage() {
       </div>
 
       <div className="section-padding py-6 lg:py-8">
-        {wishlist.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-text-tertiary">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        ) : items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -256,30 +185,18 @@ function WishlistPage() {
             </Link>
           </motion.div>
         ) : (
-          <>
-            <div className="flex items-center justify-between mb-5">
-              <p className="text-sm text-text-tertiary">
-                <span className="font-medium text-text-primary">{wishlist.length}</span> items in your wishlist
-              </p>
-              <div className="flex items-center gap-2 text-sm text-text-tertiary">
-                <span>Sort by:</span>
-                <select className="text-sm bg-transparent border border-border rounded-lg px-2 py-1 text-text-primary focus:outline-none focus:border-zumbii-400">
-                  <option>Recently Added</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Rating</option>
-                </select>
-              </div>
-            </div>
-
-            <motion.div
-              variants={stagger}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5"
-            >
-              <AnimatePresence mode="popLayout">
-                {wishlist.map((item) => (
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5"
+          >
+            <AnimatePresence mode="popLayout">
+              {items.map((item) => {
+                const price = Number(item.product.price);
+                const comparePrice = item.product.comparePrice ? Number(item.product.comparePrice) : null;
+                const busy = busyIds.has(item.productId);
+                return (
                   <motion.div
                     key={item.id}
                     layout
@@ -287,27 +204,27 @@ function WishlistPage() {
                     exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
                     className={clsx(
                       'group relative bg-surface rounded-2xl border border-border overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1',
-                      removingIds.has(item.id) && 'opacity-40 scale-95'
+                      busy && 'opacity-40 pointer-events-none'
                     )}
                   >
-                    <Link href={`/product/${item.slug}`}>
+                    <Link href={`/product/${item.product.slug}`}>
                       <div className="relative aspect-square overflow-hidden bg-surface-tertiary">
                         <Image
-                          src={item.image}
-                          alt={item.name}
+                          src={resolveImageUrl(item.product.images[0])}
+                          alt={item.product.name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
-                        {!item.inStock && (
+                        {!item.product.inStock && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <Badge variant="danger">Out of Stock</Badge>
                           </div>
                         )}
-                        {item.originalPrice && item.originalPrice > item.price && (
+                        {comparePrice && comparePrice > price && (
                           <div className="absolute top-3 left-3">
                             <Badge variant="sale" size="sm">
-                              {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
+                              {Math.round(((comparePrice - price) / comparePrice) * 100)}% OFF
                             </Badge>
                           </div>
                         )}
@@ -318,8 +235,9 @@ function WishlistPage() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          handleRemove(item.id, item.name);
+                          handleRemove(item);
                         }}
+                        disabled={busy}
                         className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-sm"
                         aria-label="Remove from wishlist"
                       >
@@ -328,68 +246,50 @@ function WishlistPage() {
                     </div>
 
                     <div className="p-4">
-                      <p className="text-[11px] text-text-tertiary truncate">{item.seller}</p>
-                      <Link href={`/product/${item.slug}`}>
+                      {item.product.seller && (
+                        <p className="text-[11px] text-text-tertiary truncate">{item.product.seller}</p>
+                      )}
+                      <Link href={`/product/${item.product.slug}`}>
                         <h3 className="text-sm font-semibold text-text-primary leading-snug line-clamp-2 hover:text-zumbii-600 transition-colors mt-0.5">
-                          {item.name}
+                          {item.product.name}
                         </h3>
                       </Link>
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                        <span className="text-[11px] font-medium text-text-primary">{item.rating}</span>
-                        <span className="text-[11px] text-text-tertiary">({item.reviewCount})</span>
-                      </div>
+                      {item.product.reviewCount > 0 && (
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span className="text-[11px] font-medium text-text-primary">{item.product.rating}</span>
+                          <span className="text-[11px] text-text-tertiary">({item.product.reviewCount})</span>
+                        </div>
+                      )}
                       <div className="flex items-baseline gap-1.5 mt-2">
                         <span className="text-base font-bold text-text-primary">
-                          ₹{item.price.toLocaleString('en-IN')}
+                          ₹{price.toLocaleString('en-IN')}
                         </span>
-                        {item.originalPrice && item.originalPrice > item.price && (
+                        {comparePrice && comparePrice > price && (
                           <span className="text-xs text-text-tertiary line-through">
-                            ₹{item.originalPrice.toLocaleString('en-IN')}
+                            ₹{comparePrice.toLocaleString('en-IN')}
                           </span>
                         )}
                       </div>
                       <button
                         onClick={() => handleMoveToCart(item)}
-                        disabled={!item.inStock}
+                        disabled={!item.product.inStock || busy}
                         className={clsx(
                           'w-full mt-3 h-9 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all',
-                          item.inStock
+                          item.product.inStock
                             ? 'bg-zumbii-600 text-white hover:bg-zumbii-700 shadow-sm shadow-zumbii-600/20'
                             : 'bg-surface-tertiary text-text-tertiary cursor-not-allowed'
                         )}
                       >
                         <ShoppingCart className="w-3.5 h-3.5" />
-                        {item.inStock ? 'Move to Cart' : 'Out of Stock'}
+                        {item.product.inStock ? 'Move to Cart' : 'Out of Stock'}
                       </button>
                     </div>
                   </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          </>
-        )}
-
-        {wishlist.length > 0 && (
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-zumbii-50 to-rose-50 border border-zumbii-100">
-            <div className="flex items-center gap-3">
-              <Share2 className="w-5 h-5 text-zumbii-600" />
-              <div>
-                <h3 className="text-sm font-semibold text-text-primary">Share your wishlist</h3>
-                <p className="text-xs text-text-tertiary">Let friends and family know what you&apos;re looking for</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-white rounded-lg border border-border text-xs text-text-tertiary">
-                <Copy className="w-3 h-3" />
-                {typeof window !== 'undefined' ? `${window.location.origin}/wishlist/shared` : ''}
-              </div>
-              <Button size="sm" onClick={handleShareWishlist}>
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
-            </div>
-          </div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>

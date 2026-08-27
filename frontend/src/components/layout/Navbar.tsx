@@ -77,6 +77,12 @@ export default function Navbar() {
   const cartCount = useCartStore((s) => s.totalItems());
   const displayedCartCount = mounted ? cartCount : 0;
 
+  const authUser = useAuthStore((s) => s.user);
+  const isLoggedIn = mounted && !!authUser;
+  const accountHref = isLoggedIn ? '/account' : '/login';
+  const displayName = [authUser?.firstName, authUser?.lastName].filter(Boolean).join(' ').trim();
+  const initial = (displayName || authUser?.phone || authUser?.email || '')[0]?.toUpperCase();
+
   return (
     <div className="fixed inset-x-0 top-0 z-40">
       <div className="bg-zumbii-950 py-1.5 text-center text-[11px] font-medium text-gold-400 sm:text-xs">
@@ -265,7 +271,7 @@ export default function Navbar() {
             {/* Compact account icon — visible in the collapsed (mobile/tablet, <1024px) header
                 as a direct link, since the full dropdown menu below is desktop-only. */}
             <Link
-              href="/account"
+              href={accountHref}
               className={clsx(
                 'flex h-11 w-11 items-center justify-center rounded-xl transition-colors lg:hidden',
                 scrolled
@@ -274,37 +280,72 @@ export default function Navbar() {
               )}
               aria-label="Account"
             >
-              <User className="h-5 w-5" />
+              {isLoggedIn ? (
+                <span
+                  className={clsx(
+                    'flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold',
+                    scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
+                  )}
+                >
+                  {initial}
+                </span>
+              ) : (
+                <User className="h-5 w-5" />
+              )}
             </Link>
 
             {/* User dropdown */}
             <div ref={userMenuRef} className="relative hidden lg:block">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className={clsx(
-                  'flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors',
-                  scrolled
-                    ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-                    : 'text-white/75 hover:bg-white/10 hover:text-white'
-                )}
-                aria-label="User menu"
-              >
-                <div className={clsx(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold',
-                  scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
-                )}>
-                  <User className="h-4 w-4" />
-                </div>
-                <ChevronDown
+              {isLoggedIn ? (
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={clsx(
-                    'hidden h-3.5 w-3.5 transition-transform duration-200 lg:block',
-                    userMenuOpen && 'rotate-180'
+                    'flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors',
+                    scrolled
+                      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                      : 'text-white/75 hover:bg-white/10 hover:text-white'
                   )}
-                />
-              </button>
+                  aria-label="User menu"
+                >
+                  <div className={clsx(
+                    'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold',
+                    scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
+                  )}>
+                    {initial}
+                  </div>
+                  {displayName && (
+                    <span className="max-w-[7rem] truncate text-sm font-medium">{displayName}</span>
+                  )}
+                  <ChevronDown
+                    className={clsx(
+                      'hidden h-3.5 w-3.5 transition-transform duration-200 lg:block',
+                      userMenuOpen && 'rotate-180'
+                    )}
+                  />
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  className={clsx(
+                    'flex items-center gap-2 rounded-xl p-1.5 pr-3 transition-colors',
+                    scrolled
+                      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+                      : 'text-white/75 hover:bg-white/10 hover:text-white'
+                  )}
+                  aria-label="Sign in"
+                >
+                  <div className={clsx(
+                    'flex h-8 w-8 items-center justify-center rounded-full',
+                    scrolled ? 'bg-zumbii-100 text-zumbii-700' : 'bg-white/20 text-white'
+                  )}>
+                    <User className="h-4 w-4" />
+                  </div>
+                  <span className="text-sm font-medium">Sign in</span>
+                </Link>
+              )}
 
               <AnimatePresence>
-                {userMenuOpen && (
+                {isLoggedIn && userMenuOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -528,13 +569,26 @@ export default function Navbar() {
 
                 <div className="space-y-1">
                   <Link
-                    href="/account"
+                    href={accountHref}
                     className="flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-text-secondary transition-colors hover:bg-zumbii-50 hover:text-zumbii-700"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <User className="h-4 w-4" />
-                    Sign In / Register
+                    {isLoggedIn ? (displayName || 'My Account') : 'Sign In / Register'}
                   </Link>
+                  {isLoggedIn && (
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                        router.push('/');
+                      }}
+                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>

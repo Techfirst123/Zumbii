@@ -12,11 +12,28 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my profile' })
+  getMe(@Request() req: any) {
+    return this.usersService.getMyProfile(req.user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Put('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update my profile (e.g. complete signup with a name)' })
+  updateMe(@Request() req: any, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateMyProfile(req.user.id, dto);
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me/addresses')

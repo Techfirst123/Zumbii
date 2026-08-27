@@ -27,7 +27,8 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { PincodeChecker } from '@/components/ui/PincodeChecker';
 import { useCartStore } from '@/store/cartStore';
-import { productsApi, ApiError } from '@/lib/api';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { productsApi, wishlistApi, couponsApi, ApiError } from '@/lib/api';
 import { mapBackendProduct } from '@/lib/adapters';
 import { ProductImagePlaceholder, PLACEHOLDER_IMAGE_SENTINEL } from '@/components/product/ProductImagePlaceholder';
 import type { Product } from '@/types';
@@ -36,7 +37,10 @@ function CartPage() {
   const cartItems = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
-  const [couponCode, setCouponCode] = useState('');
+  const savedCouponCode = useCartStore((s) => s.couponCode);
+  const setSavedCoupon = useCartStore((s) => s.setCoupon);
+  const requireAuth = useRequireAuth();
+  const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -58,8 +62,29 @@ function CartPage() {
   const shipping = cartItems.length > 0 ? 99 : 0;
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = Math.round(subtotal * 0.12);
-  const discount = Math.round(subtotal * (couponDiscount / 100));
+  const discount = couponDiscount;
   const total = subtotal + shipping + tax - discount;
+
+  // Re-validate a coupon carried over from a previous visit (subtotal may have
+  // changed since — e.g. items removed — so the discount can't just be trusted).
+  useEffect(() => {
+    if (!savedCouponCode || subtotal <= 0) return;
+    let cancelled = false;
+    couponsApi
+      .validate(savedCouponCode, subtotal)
+      .then((res) => {
+        if (cancelled) return;
+        setAppliedCoupon(res.code);
+        setCouponDiscount(res.discountAmount);
+      })
+      .catch(() => {
+        if (!cancelled) setSavedCoupon(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedCouponCode, subtotal]);
 
   const handleQuantityChange = (productId: string, variantId: string | undefined, delta: number) => {
     const item = cartItems.find((i) => i.productId === productId && i.variantId === variantId);
@@ -72,38 +97,43 @@ function CartPage() {
     toast.success(`${name} removed from cart`);
   };
 
-  const handleApplyCoupon = () => {
-    if (!couponCode.trim()) {
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) {
       toast.error('Please enter a coupon code');
       return;
     }
     setCouponLoading(true);
-    setTimeout(() => {
-      if (couponCode.toUpperCase() === 'ZUMBII20') {
-        setCouponDiscount(20);
-        setAppliedCoupon(couponCode.toUpperCase());
-        toast.success('Coupon applied! 20% discount');
-      } else if (couponCode.toUpperCase() === 'WELCOME10') {
-        setCouponDiscount(10);
-        setAppliedCoupon(couponCode.toUpperCase());
-        toast.success('Coupon applied! 10% discount');
-      } else {
-        toast.error('Invalid coupon code');
-      }
+    try {
+      const res = await couponsApi.validate(couponInput, subtotal);
+      setAppliedCoupon(res.code);
+      setCouponDiscount(res.discountAmount);
+      setSavedCoupon(res.code);
+      setCouponInput('');
+      toast.success(`Coupon applied! ₹${res.discountAmount.toLocaleString('en-IN')} off`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Invalid coupon code');
+    } finally {
       setCouponLoading(false);
-    }, 800);
+    }
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setCouponDiscount(0);
-    setCouponCode('');
+    setCouponInput('');
+    setSavedCoupon(null);
     toast.success('Coupon removed');
   };
 
-  const handleMoveToWishlist = (item: { productId: string; variantId?: string; name: string }) => {
-    handleRemoveItem(item.productId, item.variantId, item.name);
-    toast.success(`${item.name} moved to wishlist`);
+  const handleMoveToWishlist = async (item: { productId: string; variantId?: string; name: string }) => {
+    if (!requireAuth()) return;
+    try {
+      await wishlistApi.add(item.productId);
+      removeItem(item.productId, item.variantId);
+      toast.success(`${item.name} moved to wishlist`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to move item to wishlist');
+    }
   };
 
   return (
@@ -265,7 +295,7 @@ function CartPage() {
                     <div className="flex items-center gap-2">
                       <Percent className="w-4 h-4 text-leaf-600" />
                       <span className="text-sm font-medium text-leaf-700">{appliedCoupon}</span>
-                      <span className="text-xs text-leaf-600">({couponDiscount}% off)</span>
+                      <span className="text-xs text-leaf-600">(₹{couponDiscount.toLocaleString('en-IN')} off)</span>
                     </div>
                     <button
                       onClick={handleRemoveCoupon}
@@ -278,8 +308,8 @@ function CartPage() {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
                       placeholder="Enter coupon code"
                       className="flex-1 h-10 px-4 text-sm bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-zumbii-400 focus:ring-2 focus:ring-zumbii-100"
                     />
@@ -293,7 +323,6 @@ function CartPage() {
                     </Button>
                   </div>
                 )}
-                <p className="text-[11px] text-text-tertiary mt-2">Try ZUMBII20 or WELCOME10</p>
               </div>
             </div>
 
@@ -327,7 +356,7 @@ function CartPage() {
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1.5 text-leaf-600">
                           <Percent className="w-3.5 h-3.5" />
-                          Discount ({couponDiscount}%)
+                          Discount {appliedCoupon ? `(${appliedCoupon})` : ''}
                         </div>
                         <span className="text-leaf-600 font-medium">-₹{discount.toLocaleString('en-IN')}</span>
                       </div>

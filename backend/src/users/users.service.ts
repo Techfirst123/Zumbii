@@ -7,6 +7,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { isPlaceholderEmail } from '../otp/utils/normalize';
 
 @Injectable()
 export class UsersService {
@@ -156,6 +158,59 @@ export class UsersService {
     await this.prisma.user.delete({ where: { id } });
 
     return { message: 'User deleted successfully' };
+  }
+
+  async getMyProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        role: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      ...user,
+      email: isPlaceholderEmail(user.email) ? null : user.email,
+      profileComplete: Boolean(user.firstName),
+    };
+  }
+
+  async updateMyProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        role: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      ...user,
+      email: isPlaceholderEmail(user.email) ? null : user.email,
+      profileComplete: Boolean(user.firstName),
+    };
   }
 
   async getAddresses(userId: string) {

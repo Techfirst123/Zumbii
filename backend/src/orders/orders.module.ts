@@ -4,9 +4,10 @@ import { AdminOrdersController } from './admin-orders.controller';
 import { OrdersService } from './orders.service';
 import { AuthModule } from '../auth/auth.module';
 import { ProductsModule } from '../products/products.module';
+import { CouponsModule } from '../coupons/coupons.module';
 
 @Module({
-  imports: [AuthModule, ProductsModule],
+  imports: [AuthModule, ProductsModule, CouponsModule],
   controllers: [OrdersController, AdminOrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

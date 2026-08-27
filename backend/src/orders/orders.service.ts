@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductsService } from '../products/products.service';
+import { CouponsService } from '../coupons/coupons.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto, UpdatePaymentStatusDto } from './dto/update-order-status.dto';
 import { getActiveCampaignsByProductId } from '../campaigns/active-campaign.util';
@@ -29,6 +30,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private productsService: ProductsService,
+    private couponsService: CouponsService,
   ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
@@ -128,43 +130,10 @@ export class OrdersService {
     let couponCode: string | undefined;
 
     if (dto.couponCode) {
-      const coupon = await this.prisma.coupon.findUnique({
-        where: { code: dto.couponCode },
-      });
-
-      if (!coupon || !coupon.isActive) {
-        throw new BadRequestException('Invalid coupon code');
-      }
-
-      if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-        throw new BadRequestException('Coupon has expired');
-      }
-
-      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-        throw new BadRequestException('Coupon usage limit reached');
-      }
-
-      if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
-        throw new BadRequestException(
-          `Minimum order amount of $${coupon.minOrderAmount} required`,
-        );
-      }
-
-      if (coupon.discountType === 'percentage') {
-        discountAmount = (subtotal * Number(coupon.discountValue)) / 100;
-        if (coupon.maxDiscount) {
-          discountAmount = Math.min(discountAmount, Number(coupon.maxDiscount));
-        }
-      } else {
-        discountAmount = Number(coupon.discountValue);
-      }
-
-      couponCode = coupon.code;
-
-      await this.prisma.coupon.update({
-        where: { id: coupon.id },
-        data: { usedCount: { increment: 1 } },
-      });
+      const result = await this.couponsService.validate(dto.couponCode, subtotal);
+      discountAmount = result.discountAmount;
+      couponCode = result.code;
+      await this.couponsService.recordUsage(result.code);
     }
 
     const shippingMethod = dto.shippingMethod ?? DEFAULT_SHIPPING_METHOD;
